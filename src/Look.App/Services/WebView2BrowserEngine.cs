@@ -127,7 +127,12 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
 
     public async Task FindInPageAsync(string query, bool backwards = false)
     {
-        if (!_initialized || string.IsNullOrWhiteSpace(query)) return;
+        if (!_initialized) return;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            await _view.CoreWebView2.ExecuteScriptAsync("window.getSelection()?.removeAllRanges();");
+            return;
+        }
         var encodedQuery = JsonSerializer.Serialize(query);
         var backwardsLiteral = backwards ? "true" : "false";
         await _view.CoreWebView2.ExecuteScriptAsync($"window.find({encodedQuery}, false, {backwardsLiteral}, true, false, true, false);");
