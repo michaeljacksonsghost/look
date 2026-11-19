@@ -99,6 +99,12 @@ The following capabilities now have initial code paths, but remain unchecked abo
 - Named persistent profiles with isolated WebView2 storage and profile-specific browser data.
 - Text-first reader mode that restores the original URL when exited.
 - Per-domain custom CSS editor with document-creation injection and click-to-hide element picker.
+- Persistent Spaces with tab filtering and move-between-space actions.
+- Searchable Library for bookmarks, history, and downloads, with individual deletion.
+- Per-request site permission prompts that default to deny and do not persist grants.
+- Executable-download warning flow.
+- Private-window temporary profiles with normal-close deletion and stale-folder cleanup on next startup.
+- Development privacy notice and pre-release threat model.
 
 WebView2's documented extension UI limitations mean toolbar action/popup hosting and full extension compatibility are still open requirements.
 
