@@ -46,7 +46,7 @@ This environment cannot run the Windows WPF application or .NET Windows runtime.
 
 - WebView2 extension support is partial: unpacked local folders only, with no browser toolbar action/popup host. Full Manifest V3 behavior, native messaging, and Chrome Web Store/CRX installation remain unverified or unsupported.
 - Private-window data is stored in a temporary directory, removed on normal close, and stale private folders are cleaned on next startup when no active window holds the exclusive lock; forensic privacy review remains outstanding.
-- Profile management currently supports create/open only; rename, delete, import, and cross-process single-instance protection remain outstanding.
+- Profile management supports create/open/rename/delete; profile import/export and cross-process single-instance protection remain outstanding.
 - Tab suspension/resume is implemented in source but not yet runtime-verified; renderer crash recovery is not implemented.
 - Library search and individual bookmark/history/download-record deletion are implemented in source; runtime verification is still pending.
 - Reader mode currently extracts readable text from article/main/body into a clean typography view; images and rich article structure are not preserved, and the original page is reloaded when exiting.
