@@ -133,6 +133,7 @@ public partial class MainWindow : Window
     {
         if (tab.SpaceId != _activeSpaceId)
         {
+            BrowserHost.Children.Clear();
             if (_splitTab is not null)
             {
                 _splitTab.IsSplit = false;
