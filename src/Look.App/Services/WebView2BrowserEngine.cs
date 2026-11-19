@@ -19,6 +19,12 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     private bool _initialized;
 
     public FrameworkElement View => _view;
+    public bool IsMuted
+    {
+        get => _view.CoreWebView2?.IsMuted ?? false;
+        set { if (_view.CoreWebView2 is not null) _view.CoreWebView2.IsMuted = value; }
+    }
+
     public bool CanGoBack => _view.CoreWebView2?.CanGoBack ?? false;
     public bool CanGoForward => _view.CoreWebView2?.CanGoForward ?? false;
 
