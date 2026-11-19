@@ -32,6 +32,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     public event EventHandler<Uri>? AddressChanged;
     public event EventHandler<bool>? LoadingChanged;
     public event EventHandler<bool>? NavigationFinished;
+    public event EventHandler<BrowserDownloadRequest>? DownloadRequested;
 
     public async Task InitializeAsync(string userDataFolder, CancellationToken cancellationToken = default)
     {
@@ -72,6 +73,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         core.SourceChanged += OnSourceChanged;
         core.NavigationStarting += OnNavigationStarting;
         core.NavigationCompleted += OnNavigationCompleted;
+        core.DownloadStarting += OnDownloadStarting;
         _initialized = true;
     }
 
@@ -166,6 +168,23 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             AddressChanged?.Invoke(this, uri);
     }
 
+    private void OnDownloadStarting(object? sender, CoreWebView2DownloadStartingEventArgs e)
+    {
+        var operation = e.DownloadOperation;
+        var suggestedName = Path.GetFileName(e.ResultFilePath);
+        e.Handled = true;
+        if (DownloadRequested is null)
+        {
+            e.Cancel = true;
+            return;
+        }
+        DownloadRequested.Invoke(this, new BrowserDownloadRequest(operation.Uri, suggestedName, destination =>
+        {
+            if (string.IsNullOrWhiteSpace(destination)) e.Cancel = true;
+            else e.ResultFilePath = destination;
+        }));
+    }
+
     private void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e) =>
         LoadingChanged?.Invoke(this, true);
 
@@ -183,6 +202,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             core.SourceChanged -= OnSourceChanged;
             core.NavigationStarting -= OnNavigationStarting;
             core.NavigationCompleted -= OnNavigationCompleted;
+            core.DownloadStarting -= OnDownloadStarting;
             core.Stop();
         }
 
@@ -190,6 +210,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         AddressChanged = null;
         LoadingChanged = null;
         NavigationFinished = null;
+        DownloadRequested = null;
         return ValueTask.CompletedTask;
     }
 }
