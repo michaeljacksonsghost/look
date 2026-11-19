@@ -239,6 +239,16 @@ public partial class MainWindow : Window
             return;
         }
 
+        var previousSplit = _splitTab;
+        if (previousSplit is not null && previousSplit.Id != secondary.Id)
+        {
+            previousSplit.IsSplit = false;
+            if (_engines.TryGetValue(previousSplit.Id, out var previousEngine))
+                _ = previousEngine.TrySuspendAsync();
+        }
+        _splitTab = secondary;
+        secondary.IsSplit = true;
+
         try
         {
             var alreadyCreated = _engines.ContainsKey(secondary.Id);
@@ -252,16 +262,16 @@ public partial class MainWindow : Window
                 await engine.NavigateAsync(address);
             }
 
-            if (_splitTab is not null) _splitTab.IsSplit = false;
-            _splitTab = secondary;
-            _splitTab.IsSplit = true;
             await engine.ResumeAsync();
             RenderBrowserHost();
             StatusText.Text = "Split view enabled";
         }
         catch (Exception ex)
         {
-            _splitTab = null;
+            secondary.IsSplit = false;
+            _splitTab = previousSplit;
+            if (_splitTab is not null) _splitTab.IsSplit = true;
+            RenderBrowserHost();
             StatusText.Text = "Could not open split view";
             MessageBox.Show($"look could not open the second pane.\n\n{ex.Message}",
                 "Split view", MessageBoxButton.OK, MessageBoxImage.Warning);
