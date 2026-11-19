@@ -21,6 +21,9 @@ public partial class BrowserTab : ObservableObject
     [ObservableProperty]
     private bool isMuted;
 
+    [ObservableProperty]
+    private bool isActive;
+
     public string DisplayTitle => string.IsNullOrWhiteSpace(Title) ? "New tab" : Title;
 
     partial void OnTitleChanged(string value) => OnPropertyChanged(nameof(DisplayTitle));
