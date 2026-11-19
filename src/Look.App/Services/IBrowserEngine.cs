@@ -13,6 +13,10 @@ public interface IBrowserEngine : IAsyncDisposable
     Task ReloadAsync(bool bypassCache = false);
     Task StopAsync();
     Task FindInPageAsync(string query, bool backwards = false);
+    Task<IReadOnlyList<BrowserExtensionInfo>> GetExtensionsAsync();
+    Task<BrowserExtensionInfo> InstallExtensionAsync(string folderPath);
+    Task SetExtensionEnabledAsync(string extensionId, bool enabled);
+    Task RemoveExtensionAsync(string extensionId);
     bool IsMuted { get; set; }
     bool CanGoBack { get; }
     bool CanGoForward { get; }
