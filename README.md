@@ -60,7 +60,7 @@ See [release instructions](docs/RELEASING.md).
 - No password vault or automatic password filling is implemented. Any future credential storage must use Windows Credential Manager / DPAPI, never plaintext.
 - No automatic password filling.
 - Private windows use a separate temporary profile, remove their data folder on normal close, and clean abandoned folders on the next startup; forensic privacy review is still required.
-- Installer and portable builds are defined in the release script but have not yet passed the full Windows build and packaging workflow.
+- Windows CI has successfully built the application, passed the automated tests, and generated both the portable ZIP and Inno Setup installer. Interactive Windows testing and public release remain outstanding.
 
 ## Project documents
 
