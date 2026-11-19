@@ -34,6 +34,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     private string? _environmentKey;
     private EnvironmentEntry? _environmentEntry;
     private bool _initialized;
+    private bool _isSuspended;
 
     public FrameworkElement View => _view;
     public bool IsMuted
@@ -123,6 +124,23 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             await _view.CoreWebView2.ExecuteScriptAsync("location.reload(true)");
         else
             _view.CoreWebView2.Reload();
+    }
+
+    public async Task<bool> TrySuspendAsync()
+    {
+        if (!_initialized || _isSuspended) return _isSuspended;
+        _isSuspended = await _view.CoreWebView2.TrySuspendAsync();
+        return _isSuspended;
+    }
+
+    public Task ResumeAsync()
+    {
+        if (_initialized && _isSuspended)
+        {
+            _view.CoreWebView2.Resume();
+            _isSuspended = false;
+        }
+        return Task.CompletedTask;
     }
 
     public Task StopAsync()
