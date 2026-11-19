@@ -102,6 +102,7 @@ The following capabilities now have initial code paths, but remain unchecked abo
 - Persistent Spaces with tab filtering and move-between-space actions.
 - Searchable Library for bookmarks, history, and downloads, with individual deletion.
 - Searchable tab switcher across all Spaces (Ctrl+Shift+A).
+- Core keyboard shortcuts documented in `KEYBOARD_SHORTCUTS.md`.
 - Per-request site permission prompts that default to deny and do not persist grants.
 - Executable-download warning flow.
 - Private-window temporary profiles with normal-close deletion and stale-folder cleanup on next startup.
