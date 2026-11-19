@@ -31,10 +31,26 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#292A27" CornerRadius="8,8,0,0" Tag="{Binding}" AllowDrop="True"
+                                <Border CornerRadius="8,8,0,0" Tag="{Binding}" AllowDrop="True"
                                         PreviewMouseLeftButtonDown="Tab_PreviewMouseLeftButtonDown"
                                         PreviewMouseMove="Tab_PreviewMouseMove" DragOver="Tab_DragOver" Drop="Tab_Drop"
                                         Margin="2,8,2,0" MinWidth="112" MaxWidth="190" Height="38">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#20211F"/>
+                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter Property="Background" Value="#343531"/>
+                                                    <Setter Property="BorderBrush" Value="#D5D5CF"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#9C9C94"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                     <Border.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Pin / unpin tab" Click="PinTab_Click"/>
