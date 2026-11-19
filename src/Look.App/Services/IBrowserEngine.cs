@@ -26,6 +26,7 @@ public interface IBrowserEngine : IAsyncDisposable
     bool CanGoForward { get; }
     bool IsReaderMode { get; }
     Task SetReaderModeAsync(bool enabled);
+    Task SetCustomCssAsync(string domain, string css);
     event EventHandler<string>? TitleChanged;
     event EventHandler<Uri>? AddressChanged;
     event EventHandler<bool>? LoadingChanged;
