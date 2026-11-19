@@ -357,12 +357,20 @@ public partial class MainWindow : Window
             }
             if (!Uri.TryCreate(tab.Address, UriKind.Absolute, out var pageUri)) return;
             var host = pageUri.Host;
-            var css = await _dataStore.GetSiteCssAsync(host);
-            if (!css.Contains(selector, StringComparison.Ordinal))
-                css = string.IsNullOrWhiteSpace(css) ? $"{selector} {{ display: none !important; }}" : $"{css}{Environment.NewLine}{selector} {{ display: none !important; }}";
-            await _dataStore.SaveSiteCssAsync(host, css);
-            await ApplySiteCssToEnginesAsync(host, css);
-            if (_active?.Id == tab.Id) StatusText.Text = $"Hidden element on {host}";
+            try
+            {
+                var css = await _dataStore.GetSiteCssAsync(host);
+                if (!css.Contains(selector, StringComparison.Ordinal))
+                    css = string.IsNullOrWhiteSpace(css) ? $"{selector} {{ display: none !important; }}" : $"{css}{Environment.NewLine}{selector} {{ display: none !important; }}";
+                await _dataStore.SaveSiteCssAsync(host, css);
+                await ApplySiteCssToEnginesAsync(host, css);
+                if (_active?.Id == tab.Id) StatusText.Text = $"Hidden element on {host}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not save the element-hiding rule.\n\n{ex.Message}",
+                    "Element picker", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         };
         engine.PermissionRequested += (_, request) =>
         {
