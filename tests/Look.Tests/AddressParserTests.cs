@@ -54,6 +54,6 @@ public sealed class AddressParserTests
     {
         var result = AddressParser.Parse(input);
         Assert.Equal("www.google.com", result.Host);
-        Assert.Contains("file", result.Query);
+        Assert.Contains(Uri.EscapeDataString(input), result.Query);
     }
 }
