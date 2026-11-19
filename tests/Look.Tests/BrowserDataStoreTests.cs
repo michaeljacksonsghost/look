@@ -75,6 +75,25 @@ public sealed class BrowserDataStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task LibraryItemsCanBeDeletedIndividually()
+    {
+        var store = new BrowserDataStore(FilePath);
+        await store.ToggleBookmarkAsync("Example", "https://example.org/");
+        await store.AddHistoryAsync("Example", "https://example.org/");
+        var download = new BrowserDownloadEntry(Guid.NewGuid(), "file.txt",
+            "https://example.org/file.txt", Path.Combine(_folder, "file.txt"), true, DateTimeOffset.UtcNow);
+        await store.AddDownloadAsync(download);
+
+        await store.RemoveBookmarkAsync("https://example.org/");
+        await store.RemoveHistoryAsync("https://example.org/");
+        await store.RemoveDownloadAsync(download.Id);
+
+        Assert.Empty(await store.GetBookmarksAsync());
+        Assert.Empty(await store.GetHistoryAsync());
+        Assert.Empty(await store.GetDownloadsAsync());
+    }
+
+    [Fact]
     public async Task InvalidDomainRulesAreRejected()
     {
         var store = new BrowserDataStore(FilePath);
