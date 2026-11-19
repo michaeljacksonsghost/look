@@ -129,6 +129,17 @@ public sealed class BrowserDataStore
         return added;
     }
 
+    public async Task AddDownloadAsync(BrowserDownloadEntry download, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data =>
+        {
+            data.Downloads.Insert(0, download);
+            data.Downloads = data.Downloads.Take(200).ToList();
+        }, cancellationToken);
+
+    public async Task<IReadOnlyList<BrowserDownloadEntry>> GetDownloadsAsync(int limit = 100,
+        CancellationToken cancellationToken = default) =>
+        (await LoadAsync(cancellationToken)).Downloads.Take(Math.Clamp(limit, 1, 200)).ToList();
+
     public async Task ClearHistoryAsync(CancellationToken cancellationToken = default) =>
         await MutateAsync(data => data.History.Clear(), cancellationToken);
 
@@ -167,6 +178,7 @@ public sealed class BrowserDataStore
         RecentlyClosedTabs = data.RecentlyClosedTabs.ToList(),
         ActiveTabIndex = data.ActiveTabIndex,
         Bookmarks = data.Bookmarks.ToList(),
-        History = data.History.ToList()
+        History = data.History.ToList(),
+        Downloads = data.Downloads.ToList()
     };
 }
