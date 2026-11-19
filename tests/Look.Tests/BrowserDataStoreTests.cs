@@ -49,6 +49,26 @@ public sealed class BrowserDataStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task SpacesAndTabMembershipArePersisted()
+    {
+        var store = new BrowserDataStore(FilePath);
+        var spaces = new[]
+        {
+            new BrowserSpace("default", "Default", DateTimeOffset.UtcNow),
+            new BrowserSpace("research", "Research", DateTimeOffset.UtcNow)
+        };
+        await store.SaveSessionAsync(
+            [new BrowserSessionTab("https://example.org/", "Example", false, "research")],
+            0, spaces, "research");
+
+        var reopened = await new BrowserDataStore(FilePath).LoadAsync();
+
+        Assert.Equal("research", reopened.ActiveSpaceId);
+        Assert.Equal("research", Assert.Single(reopened.SessionTabs).SpaceId);
+        Assert.Equal(2, reopened.Spaces.Count);
+    }
+
+    [Fact]
     public async Task RecentlyClosedTabsAndDownloadsArePersisted()
     {
         var store = new BrowserDataStore(FilePath);
