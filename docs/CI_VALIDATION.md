@@ -14,3 +14,8 @@ A green run is required for Release compilation, xUnit tests, self-contained x64
 - Artifact expiry: 17 February 2027.
 
 The artifact can be downloaded from the workflow run page. It is a CI artifact, not a signed public release. No interactive Windows smoke test has been completed.
+
+
+## Installer warning cleanup
+
+A follow-up changed the deprecated Inno Setup `x64` architecture alias to `x64compatible`, allowing x64 Windows and Windows 11 on Arm while avoiding the compiler deprecation warning. This change is being re-run through the Windows packaging workflow.
