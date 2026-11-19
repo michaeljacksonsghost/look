@@ -31,7 +31,8 @@
 - [x] Add separate temporary profile/data location for private windows (runtime/privacy verification pending).
 - [x] Add named Spaces for tab organization and moving tabs between Spaces (runtime verification pending).
 - [ ] Persistent user profiles with explicit cookie/storage isolation.
-- [ ] Two-to-four-pane split view with resizing and focus switching.
+- [x] Two-pane split view with resizing and pane switching (runtime verification pending).
+- [ ] Extend split layout to three and four panes.
 - [ ] Reader mode and clean reading typography.
 - [x] Add user-managed per-domain blocking and allowlist exceptions (runtime verification pending).
 - [ ] Add maintained ad/tracker filter lists and per-site controls.
