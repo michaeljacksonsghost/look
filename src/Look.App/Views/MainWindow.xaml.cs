@@ -347,6 +347,17 @@ public partial class MainWindow : Window
             tab.IsLoading = loading;
             if (_active?.Id == tab.Id) StatusText.Text = loading ? "Loading…" : "Ready";
         };
+        engine.ElementPicked += async (_, selector) =>
+        {
+            if (!Uri.TryCreate(tab.Address, UriKind.Absolute, out var pageUri)) return;
+            var host = pageUri.Host;
+            var css = await _dataStore.GetSiteCssAsync(host);
+            if (!css.Contains(selector, StringComparison.Ordinal))
+                css = string.IsNullOrWhiteSpace(css) ? $"{selector} {{ display: none !important; }}" : $"{css}{Environment.NewLine}{selector} {{ display: none !important; }}";
+            await _dataStore.SaveSiteCssAsync(host, css);
+            await ApplySiteCssToEnginesAsync(host, css);
+            if (_active?.Id == tab.Id) StatusText.Text = $"Hidden element on {host}";
+        };
         engine.PermissionRequested += (_, request) =>
         {
             var decision = MessageBox.Show(
@@ -918,6 +929,20 @@ public partial class MainWindow : Window
             StatusText.Text = string.IsNullOrWhiteSpace(updatedCss) ? "Site CSS cleared" : $"Custom CSS saved for {host}";
         };
         cssMenu.Items.Add(editCss);
+        var pickElement = new MenuItem { Header = "Pick an element to hide…" };
+        pickElement.IsEnabled = _active is not null && _engines.ContainsKey(_active.Id) &&
+            !_engines[_active.Id].IsReaderMode;
+        pickElement.Click += async (_, _) =>
+        {
+            if (_active is null || !_engines.TryGetValue(_active.Id, out var engine)) return;
+            try
+            {
+                await engine.StartElementPickerAsync();
+                StatusText.Text = "Click an element to hide · Esc to cancel";
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Element picker", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        };
+        cssMenu.Items.Add(pickElement);
         var clearCss = new MenuItem { Header = "Clear CSS for this website" };
         clearCss.Click += async (_, _) =>
         {
