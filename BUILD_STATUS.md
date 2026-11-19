@@ -4,33 +4,42 @@
 
 The current development branch contains:
 - WPF browser shell with address/search navigation.
-- Engine abstraction and a WebView2 adapter, with a separate WebView2 instance per tab.
-- Persistent WebView2 profile shared by regular tabs.
-- Tab title/address/loading state and back/forward/reload/stop navigation.
-- Tab context actions: pin, duplicate, mute, close.
-- Find-in-page overlay and Ctrl+F shortcut.
-- Local JSON persistence for session tabs, bookmarks, browsing history, and recently closed tabs.
-- Ctrl+Shift+T restore for the most recently closed tab.
-- WebView2 unpacked-extension installation and management (list, enable, disable, remove).
-- Windows GitHub Actions workflow and xUnit test project for address parsing and browser-data persistence.
+- Browser-engine interface and WebView2 adapter.
+- Separate WebView2 control and navigation state per tab.
+- Shared environment manager with reference counting for regular and isolated profiles.
+- Navigation, back/forward/reload/stop, and find-in-page.
+- Tab close, duplicate, pin, mute, drag reorder, and keyboard shortcuts.
+- Local JSON persistence for session tabs, recently closed tabs, bookmarks, history, and downloads.
+- Save-as download flow, completion/interruption tracking, and recent downloads list.
+- Basic unpacked-extension install/list/enable/disable/remove.
+- Private windows with a separate temporary profile/data directory; the directory is deleted on normal close where Windows releases the files.
+- Explicit portable mode that stores profile and browser data beside the executable in a Data directory.
+- Version metadata, changelog, release instructions, PowerShell packaging script, and Inno Setup installer definition.
+- Windows GitHub Actions workflow intended to build, test, package, and upload both x64 distributions.
+- xUnit tests for address parsing and browser-data persistence.
 
 ## Verification status
 
 - [ ] Windows CI build completed successfully.
 - [ ] Unit tests passed in CI.
+- [ ] Installer compiled successfully in CI.
+- [ ] Portable ZIP generated and launched successfully.
 - [ ] Manual smoke test on Windows 10/11.
-- [ ] Multi-tab navigation and history verified.
-- [ ] Session restore, bookmark/history persistence verified.
+- [ ] Multi-tab navigation and back/forward history verified.
+- [ ] Session restore, bookmark/history, download, and private-window cleanup verified.
 - [ ] Unpacked extension install/disable/remove verified with real extensions.
+- [ ] Clean install, upgrade, uninstall, and portable data isolation verified.
 
-This environment cannot run the Windows WPF application or .NET Windows runtime. No successful compile or manual runtime result is claimed. The GitHub Actions workflow must be checked before treating the current code as build-verified.
+This environment cannot run the Windows WPF application or .NET Windows runtime. No successful compile, package build, or manual runtime result is claimed. The Windows GitHub Actions run must be inspected before treating this milestone as build-verified.
 
 ## Known limitations
 
-- WebView2 extension support is partial: extensions are installed from unpacked local folders; toolbar buttons and popup entry points are not yet hosted. Full Manifest V3 and real-extension compatibility remains unverified.
-- No CRX or Chrome Web Store installation flow.
-- No downloads manager yet.
-- Tabs share one persistent profile; private windows and cookie isolation are not implemented.
-- Recently closed tabs are persisted, but only the last closed tab is currently restored by shortcut.
-- Tab reordering, split view, Spaces, reader mode, content blocking, settings, and credential vault are not implemented.
-- Installer, portable package, signing, updater, and rollback do not exist yet.
+- WebView2 extension support is partial: unpacked local folders only, with no browser toolbar action/popup host. Full Manifest V3 behavior, native messaging, and Chrome Web Store/CRX installation remain unverified or unsupported.
+- Private-window data is stored in a temporary directory and removed on normal close; crash recovery cleanup and forensic privacy review remain outstanding.
+- No separate persistent user profiles beyond the default profile and private-window profiles.
+- Tab suspension/resume and renderer crash recovery are not implemented.
+- History search and per-entry deletion are not implemented.
+- Content blocking, reader mode, custom CSS/element hiding, split view, Spaces, and tab switcher are not implemented.
+- Credential vault and site permission manager are not implemented.
+- Installer and portable package definitions exist, but actual artifacts have not yet been built and verified.
+- Code signing, updater, rollback, and release checksums remain outstanding.
