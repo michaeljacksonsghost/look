@@ -40,6 +40,42 @@ public sealed class BrowserProfileStore
         finally { GlobalGate.Release(); }
     }
 
+    public async Task<BrowserProfileInfo> RenameProfileAsync(string profileId, string name, CancellationToken cancellationToken = default)
+    {
+        var normalizedName = name.Trim();
+        if (normalizedName.Length is < 1 or > 32)
+            throw new ArgumentException("Profile names must be between 1 and 32 characters.", nameof(name));
+
+        await GlobalGate.WaitAsync(cancellationToken);
+        try
+        {
+            var profiles = await LoadAsync(cancellationToken);
+            var index = profiles.FindIndex(profile => profile.Id == profileId);
+            if (index < 0) throw new KeyNotFoundException("Profile not found.");
+            if (profiles.Any(profile => profile.Id != profileId &&
+                string.Equals(profile.Name, normalizedName, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException("A profile with that name already exists.");
+            var renamed = profiles[index] with { Name = normalizedName };
+            profiles[index] = renamed;
+            await SaveAsync(profiles, cancellationToken);
+            return renamed;
+        }
+        finally { GlobalGate.Release(); }
+    }
+
+    public async Task<bool> DeleteProfileAsync(string profileId, CancellationToken cancellationToken = default)
+    {
+        await GlobalGate.WaitAsync(cancellationToken);
+        try
+        {
+            var profiles = await LoadAsync(cancellationToken);
+            var removed = profiles.RemoveAll(profile => profile.Id == profileId) > 0;
+            if (removed) await SaveAsync(profiles, cancellationToken);
+            return removed;
+        }
+        finally { GlobalGate.Release(); }
+    }
+
     private async Task<List<BrowserProfileInfo>> LoadAsync(CancellationToken cancellationToken)
     {
         if (!File.Exists(_filePath)) return [];
