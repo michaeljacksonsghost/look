@@ -39,7 +39,7 @@
 - [x] Add user-managed per-domain blocking and allowlist exceptions (runtime verification pending).
 - [ ] Add maintained ad/tracker filter lists and per-site controls.
 - [x] Per-domain custom CSS injected at document creation (runtime verification pending).
-- [ ] Visual element-picker hiding and per-site CSS rule management UI.
+- [x] Click-to-hide element picker that creates per-site CSS rules (runtime verification pending).
 - [ ] Picture-in-picture and media controls.
 
 ## 4 — Privacy and security
