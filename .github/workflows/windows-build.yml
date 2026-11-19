@@ -1,4 +1,4 @@
-name: Windows build
+name: Windows build and release artifacts
 
 on:
   push:
@@ -17,9 +17,16 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - name: Restore
-        run: dotnet restore .\Look.slnx
-      - name: Build Release
-        run: dotnet build .\Look.slnx --configuration Release --no-restore
-      - name: Run tests
-        run: dotnet test .\Look.slnx --configuration Release --no-build --no-restore
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Build, test, and package
+        shell: pwsh
+        run: ./scripts/build-release.ps1
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: look-windows-x64
+          path: |
+            artifacts/look-portable-win-x64.zip
+            artifacts/look-setup-0.1.0-win-x64.exe
+          if-no-files-found: error
