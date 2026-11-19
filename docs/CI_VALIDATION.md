@@ -19,3 +19,8 @@ The artifact can be downloaded from the workflow run page. It is a CI artifact, 
 ## Installer warning cleanup
 
 A follow-up changed the deprecated Inno Setup `x64` architecture alias to `x64compatible`, allowing x64 Windows and Windows 11 on Arm while avoiding the compiler deprecation warning. This change is being re-run through the Windows packaging workflow.
+
+
+## Searchable tab switcher validation
+
+The latest source adds a searchable all-Spaces tab switcher on Ctrl+Shift+A. This run validates its WPF window, filtering, selection, and shortcut integration in the full Windows build.
