@@ -3,6 +3,7 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using System.Windows;
 using System.Text.Json;
+using System.Collections.Concurrent;
 
 namespace Look.Services;
 
@@ -12,9 +13,8 @@ namespace Look.Services;
 /// </summary>
 public sealed class WebView2BrowserEngine : IBrowserEngine
 {
-    private static readonly SemaphoreSlim EnvironmentGate = new(1, 1);
-    private static CoreWebView2Environment? SharedEnvironment;
-    private static string? SharedUserDataFolder;
+    private static readonly ConcurrentDictionary<string, Lazy<Task<CoreWebView2Environment>>> Environments =
+        new(StringComparer.OrdinalIgnoreCase);
 
     private readonly WebView2 _view = new();
     private bool _initialized;
@@ -39,30 +39,24 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     {
         if (_initialized) return;
 
-        await EnvironmentGate.WaitAsync(cancellationToken);
+        var fullPath = Path.GetFullPath(userDataFolder);
+        Directory.CreateDirectory(fullPath);
+        var environmentTask = Environments.GetOrAdd(fullPath, path =>
+            new Lazy<Task<CoreWebView2Environment>>(() => CoreWebView2Environment.CreateAsync(
+                userDataFolder: path,
+                options: new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true }))).Value;
+
+        CoreWebView2Environment environment;
         try
         {
-            if (SharedEnvironment is null)
-            {
-                SharedUserDataFolder = Path.GetFullPath(userDataFolder);
-                Directory.CreateDirectory(SharedUserDataFolder);
-                SharedEnvironment = await CoreWebView2Environment.CreateAsync(
-                    userDataFolder: SharedUserDataFolder,
-                    options: new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true });
-            }
-            else if (!string.Equals(SharedUserDataFolder, Path.GetFullPath(userDataFolder),
-                         StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException("All tabs in a browser window must use the same WebView2 profile.");
-            }
+            environment = await environmentTask.WaitAsync(cancellationToken);
         }
-        finally
+        catch
         {
-            EnvironmentGate.Release();
+            Environments.TryRemove(fullPath, out _);
+            throw;
         }
 
-        var environment = SharedEnvironment
-            ?? throw new InvalidOperationException("The WebView2 environment could not be created.");
         await _view.EnsureCoreWebView2Async(environment);
         var core = _view.CoreWebView2;
         core.Settings.AreDefaultContextMenusEnabled = true;
@@ -223,6 +217,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         LoadingChanged = null;
         NavigationFinished = null;
         DownloadRequested = null;
+        ((IDisposable)_view).Dispose();
         return ValueTask.CompletedTask;
     }
 }
