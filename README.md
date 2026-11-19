@@ -22,6 +22,7 @@ dotnet run --project .\src\Look.App\Look.App.csproj
 - Named Spaces for organizing tabs and moving tabs between workspaces.
 - Named persistent browser profiles with isolated cookies, storage, bookmarks, history, settings, and extensions.
 - Resizable two-pane split browsing with pane switching.
+- Searchable tab switcher across Spaces (Ctrl+Shift+A).
 - Text-first reader mode with clean typography.
 - Per-domain custom CSS with document-start injection and click-to-hide element selection.
 - Find-in-page.
