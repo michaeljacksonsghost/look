@@ -10,7 +10,7 @@ public partial class BrowserLibraryWindow : Window
 {
     private enum EntryKind { Bookmark, History, Download }
 
-    private sealed record LibraryItem(Guid Id, EntryKind Kind, string Title, string Address, string Metadata);
+    private sealed record LibraryItem(Guid Id, EntryKind Kind, string Title, string Address, string Metadata, string? FilePath = null);
 
     private readonly BrowserDataStore _store;
     private readonly Action<string> _openAddress;
@@ -79,10 +79,10 @@ public partial class BrowserLibraryWindow : Window
         if ((sender as FrameworkElement)?.Tag is not LibraryItem item) return;
         if (item.Kind == EntryKind.Download)
         {
-            if (File.Exists(item.Metadata.Split(" · ", 2).Last()))
+            if (item.FilePath is not null && File.Exists(item.FilePath))
             {
-                var path = item.Metadata.Split(" · ", 2).Last();
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(item.FilePath) { UseShellExecute = true }); }
+                catch (Exception ex) { MessageBox.Show($"The file could not be opened.\\n\\n{ex.Message}", "Downloads", MessageBoxButton.OK, MessageBoxImage.Warning); }
             }
             else
                 MessageBox.Show("The downloaded file is no longer available.", "Downloads",
