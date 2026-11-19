@@ -1,3 +1,4 @@
+using System.IO;
 namespace Look;
 
 /// <summary>Resolves the browser's data location before any WebView2 control is created.</summary>
