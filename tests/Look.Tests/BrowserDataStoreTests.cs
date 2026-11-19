@@ -62,6 +62,26 @@ public sealed class BrowserDataStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task DomainBlockingSettingsNormalizeAndPersistHostnames()
+    {
+        var store = new BrowserDataStore(FilePath);
+        await store.AddBlockedDomainAsync("https://ads.example.org/path");
+        await store.AddAllowedDomainAsync("media.example.org");
+
+        var settings = await new BrowserDataStore(FilePath).GetSettingsAsync();
+
+        Assert.Contains("ads.example.org", settings.BlockedDomains);
+        Assert.Contains("media.example.org", settings.AllowedDomains);
+    }
+
+    [Fact]
+    public async Task InvalidDomainRulesAreRejected()
+    {
+        var store = new BrowserDataStore(FilePath);
+        await Assert.ThrowsAsync<ArgumentException>(() => store.AddBlockedDomainAsync("javascript:alert(1)"));
+    }
+
+    [Fact]
     public async Task NonHttpAddressesAreNotStoredInHistoryOrBookmarks()
     {
         var store = new BrowserDataStore(FilePath);
