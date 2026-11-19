@@ -16,6 +16,6 @@ The following shortcuts are implemented in the current WPF shell. Some actions a
 | `Ctrl+Shift+Tab` | Move to the previous tab in the active Space |
 | `Ctrl+1`–`Ctrl+8` | Switch to tab 1–8 in the active Space |
 | `Ctrl+9` | Switch to the last tab in the active Space |
-| `Esc` | Close the tab switcher or exit the element picker; in-page find has its own close control |
+| `Esc` | Close the tab switcher, exit the element picker, or close in-page find |
 
 These shortcuts have passed compilation but still need hands-on Windows keyboard testing. Future work includes a remappable shortcut settings page and a complete keyboard-only accessibility audit.
