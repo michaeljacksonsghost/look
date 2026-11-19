@@ -48,6 +48,19 @@ public sealed class BrowserDataStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task RecentlyClosedTabsAndDownloadsArePersisted()
+    {
+        var store = new BrowserDataStore(FilePath);
+        await store.AddRecentlyClosedAsync(new BrowserSessionTab("https://example.org/", "Example"));
+        await store.AddDownloadAsync(new BrowserDownloadEntry(Guid.NewGuid(), "report.pdf",
+            "https://example.org/report.pdf", Path.Combine(_folder, "report.pdf"), true, DateTimeOffset.UtcNow));
+
+        var reopened = new BrowserDataStore(FilePath);
+        Assert.Equal("https://example.org/", Assert.Single(await reopened.GetRecentlyClosedAsync()).Address);
+        Assert.Equal("report.pdf", Assert.Single(await reopened.GetDownloadsAsync()).FileName);
+    }
+
+    [Fact]
     public async Task NonHttpAddressesAreNotStoredInHistoryOrBookmarks()
     {
         var store = new BrowserDataStore(FilePath);
