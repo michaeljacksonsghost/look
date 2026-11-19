@@ -552,6 +552,13 @@ public partial class MainWindow : Window
         _ = SaveSessionQuietlyAsync();
     }
 
+    private bool IsProfileWindowOpen(string profileId)
+    {
+        lock (ProfileWindowsLock)
+            return ProfileWindows.TryGetValue(profileId, out var weak) &&
+                weak.TryGetTarget(out var window) && window.IsLoaded;
+    }
+
     private void OpenProfileWindow(BrowserProfileInfo? profile)
     {
         var key = profile?.Id ?? "default";
@@ -570,7 +577,7 @@ public partial class MainWindow : Window
         window.Show();
     }
 
-    private string? PromptForProfileName()
+    private string? PromptForProfileName(string initialName = "")
     {
         var dialog = new Window
         {
@@ -594,6 +601,7 @@ public partial class MainWindow : Window
             Foreground = (System.Windows.Media.Brush)FindResource("InkBrush"),
             BorderBrush = (System.Windows.Media.Brush)FindResource("LineBrush")
         };
+        input.Text = initialName;
         layout.Children.Add(input);
         var buttons = new StackPanel
         {
@@ -858,8 +866,36 @@ public partial class MainWindow : Window
         var profiles = await _profileStore.GetProfilesAsync();
         foreach (var profile in profiles)
         {
-            var profileItem = new MenuItem { Header = profile.Name, IsEnabled = profile.Id != _profile?.Id, Tag = profile };
-            profileItem.Click += (_, _) => OpenProfileWindow(profile);
+            var isCurrent = profile.Id == _profile?.Id;
+            var profileItem = new MenuItem { Header = profile.Name, IsEnabled = !isCurrent, Tag = profile };
+            var openItem = new MenuItem { Header = "Open" };
+            openItem.Click += (_, _) => OpenProfileWindow(profile);
+            var renameItem = new MenuItem { Header = "Rename…", IsEnabled = !IsProfileWindowOpen(profile.Id) };
+            renameItem.Click += async (_, _) =>
+            {
+                var newName = PromptForProfileName(profile.Name);
+                if (string.IsNullOrWhiteSpace(newName)) return;
+                try { await _profileStore.RenameProfileAsync(profile.Id, newName); }
+                catch (Exception ex) { MessageBox.Show(ex.Message, "Rename profile", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            };
+            var deleteItem = new MenuItem { Header = "Delete…", IsEnabled = !IsProfileWindowOpen(profile.Id) };
+            deleteItem.Click += async (_, _) =>
+            {
+                if (MessageBox.Show($"Delete the '{profile.Name}' profile and all its local browser data?",
+                    "Delete profile", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+                var profileRoot = Path.Combine(Look.AppPaths.DataRoot, "Profiles", profile.Id);
+                try { if (Directory.Exists(profileRoot)) Directory.Delete(profileRoot, recursive: true); }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"The profile data could not be deleted.\n\n{ex.Message}",
+                        "Delete profile", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                await _profileStore.DeleteProfileAsync(profile.Id);
+            };
+            profileItem.Items.Add(openItem);
+            profileItem.Items.Add(renameItem);
+            profileItem.Items.Add(deleteItem);
             profilesMenu.Items.Add(profileItem);
         }
         profilesMenu.Items.Add(new Separator());
