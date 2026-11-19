@@ -3,6 +3,8 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using System.Windows;
 using System.Text.Json;
+using System.Net;
+using System.Text;
 using System.Collections.Concurrent;
 
 namespace Look.Services;
@@ -36,6 +38,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     private EnvironmentEntry? _environmentEntry;
     private bool _initialized;
     private bool _isSuspended;
+    private string? _readerSourceUri;
 
     public FrameworkElement View => _view;
     public bool IsMuted
@@ -46,6 +49,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
 
     public bool CanGoBack => _view.CoreWebView2?.CanGoBack ?? false;
     public bool CanGoForward => _view.CoreWebView2?.CanGoForward ?? false;
+    public bool IsReaderMode => _readerSourceUri is not null;
 
     public event EventHandler<string>? TitleChanged;
     public event EventHandler<Uri>? AddressChanged;
@@ -104,14 +108,15 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     {
         cancellationToken.ThrowIfCancellationRequested();
         EnsureInitialized();
+        _readerSourceUri = null;
         _view.CoreWebView2.Navigate(uri.AbsoluteUri);
         return Task.CompletedTask;
     }
 
-    public Task GoBackAsync()
+    public async Task GoBackAsync()
     {
-        if (CanGoBack) _view.CoreWebView2!.GoBack();
-        return Task.CompletedTask;
+        if (IsReaderMode) await SetReaderModeAsync(false);
+        else if (CanGoBack) _view.CoreWebView2!.GoBack();
     }
 
     public Task GoForwardAsync()
@@ -173,6 +178,57 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         var encodedQuery = JsonSerializer.Serialize(query);
         var backwardsLiteral = backwards ? "true" : "false";
         await _view.CoreWebView2.ExecuteScriptAsync($"window.find({encodedQuery}, false, {backwardsLiteral}, true, false, true, false);");
+    }
+
+    private sealed record ReaderPayload(string Title, string Text);
+
+    public async Task SetReaderModeAsync(bool enabled)
+    {
+        EnsureInitialized();
+        if (enabled == IsReaderMode) return;
+
+        if (!enabled)
+        {
+            var source = _readerSourceUri;
+            _readerSourceUri = null;
+            if (Uri.TryCreate(source, UriKind.Absolute, out var original))
+                _view.CoreWebView2.Navigate(original.AbsoluteUri);
+            return;
+        }
+
+        var sourceUri = _view.Source?.AbsoluteUri;
+        if (!Uri.TryCreate(sourceUri, UriKind.Absolute, out var current) ||
+            (current.Scheme != Uri.UriSchemeHttp && current.Scheme != Uri.UriSchemeHttps))
+            throw new InvalidOperationException("Open a normal website before entering reader mode.");
+
+        const string extractionScript = @"(() => {
+            const root = document.querySelector('article') || document.querySelector('main') || document.body;
+            const title = document.querySelector('h1')?.innerText || document.title || location.hostname;
+            return JSON.stringify({ title, text: root?.innerText || '' });
+        })()";
+        var scriptResult = await _view.CoreWebView2.ExecuteScriptAsync(extractionScript);
+        var payloadJson = JsonSerializer.Deserialize<string>(scriptResult);
+        var payload = payloadJson is null ? null :
+            JsonSerializer.Deserialize<ReaderPayload>(payloadJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (payload is null || string.IsNullOrWhiteSpace(payload.Text))
+            throw new InvalidOperationException("look couldn't find readable text on this page.");
+
+        var html = new StringBuilder();
+        html.Append("<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>");
+        html.Append("<title>").Append(WebUtility.HtmlEncode(payload.Title)).Append("</title>");
+        html.Append("<style>html{background:#f4f1e9;color:#292820}body{margin:0;padding:56px 24px 96px;font-family:Georgia,serif;font-size:19px;line-height:1.8}main{max-width:740px;margin:0 auto}h1{font-size:2.2rem;line-height:1.2;font-weight:500;margin:0 0 2.2rem}p{margin:0 0 1.25rem;white-space:pre-wrap}::selection{background:#d8d3c6}</style>");
+        html.Append("</head><body><main><h1>").Append(WebUtility.HtmlEncode(payload.Title)).Append("</h1>");
+        foreach (var paragraph in payload.Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var trimmed = paragraph.Trim();
+            if (trimmed.Length > 0)
+                html.Append("<p>").Append(WebUtility.HtmlEncode(trimmed)).Append("</p>");
+        }
+        html.Append("</main></body></html>");
+
+        _readerSourceUri = current.AbsoluteUri;
+        _view.CoreWebView2.NavigateToString(html.ToString());
     }
 
     public Task ConfigureContentBlockingAsync(BrowserSettings settings)
@@ -269,6 +325,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
 
     private void OnSourceChanged(object? sender, CoreWebView2SourceChangedEventArgs e)
     {
+        if (IsReaderMode) return;
         if (Uri.TryCreate(_view.Source?.ToString(), UriKind.Absolute, out var uri))
             AddressChanged?.Invoke(this, uri);
     }
@@ -319,7 +376,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     private void OnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
         LoadingChanged?.Invoke(this, false);
-        NavigationFinished?.Invoke(this, e.IsSuccess);
+        if (!IsReaderMode) NavigationFinished?.Invoke(this, e.IsSuccess);
     }
 
     public async ValueTask DisposeAsync()
@@ -351,6 +408,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             NavigationFinished = null;
             DownloadRequested = null;
             PermissionRequested = null;
+            _readerSourceUri = null;
             ((IDisposable)_view).Dispose();
             if (_environmentKey is not null && _environmentEntry is not null)
                 ReleaseEnvironment(_environmentKey, _environmentEntry);
