@@ -277,7 +277,11 @@ public partial class MainWindow : Window
         {
             secondary.IsSplit = false;
             _splitTab = previousSplit;
-            if (_splitTab is not null) _splitTab.IsSplit = true;
+            if (_splitTab is not null)
+            {
+                _splitTab.IsSplit = true;
+                if (_engines.TryGetValue(_splitTab.Id, out var restoreEngine)) _ = restoreEngine.ResumeAsync();
+            }
             RenderBrowserHost();
             StatusText.Text = "Could not open split view";
             MessageBox.Show($"look could not open the second pane.\n\n{ex.Message}",
