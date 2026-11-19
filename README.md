@@ -22,6 +22,7 @@ dotnet run --project .\src\Look.App\Look.App.csproj
 - Find-in-page.
 - Local session restore, recently closed tabs, bookmarks, history, and downloads.
 - Basic unpacked-extension install/list/enable/disable/remove.
+- User-managed domain blocking and allowlist exceptions.
 - Separate temporary browser profile for private windows.
 - Portable-mode data folder and Windows installer/portable packaging scripts.
 
