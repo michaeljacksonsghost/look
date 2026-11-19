@@ -52,6 +52,9 @@
                                                     <Setter Property="Background" Value="#343531"/>
                                                     <Setter Property="BorderBrush" Value="#D5D5CF"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSplit}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#A9A99F"/>
+                                                </DataTrigger>
                                                 <DataTrigger Binding="{Binding IsLoading}" Value="True">
                                                     <Setter Property="BorderBrush" Value="#9C9C94"/>
                                                 </DataTrigger>
