@@ -365,7 +365,7 @@ public partial class MainWindow : Window
     private async void CloseTab_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is not BrowserTab tab) return;
-        var index = _tabs.IndexOf(tab);
+        var index = _tabs.Where(item => item.SpaceId == _activeSpaceId).ToList().IndexOf(tab);
         var wasActive = _active?.Id == tab.Id;
         if (!_isPrivate && Uri.TryCreate(tab.Address, UriKind.Absolute, out var closedUri) &&
             (closedUri.Scheme == Uri.UriSchemeHttp || closedUri.Scheme == Uri.UriSchemeHttps))
@@ -765,13 +765,14 @@ public partial class MainWindow : Window
             : recentlyClosed.FirstOrDefault(item => item.Address == targetAddress);
         if (saved is null) return;
         await _dataStore.RemoveRecentlyClosedAsync(saved.Address);
-        if (_spaces.Any(space => space.Id == saved.SpaceId))
+        var restoreSpaceId = _spaces.Any(space => space.Id == saved.SpaceId) ? saved.SpaceId : _activeSpaceId;
+        if (restoreSpaceId != _activeSpaceId)
         {
-            _activeSpaceId = saved.SpaceId;
+            _activeSpaceId = restoreSpaceId;
             SpaceSelector.SelectedValue = _activeSpaceId;
             _tabView.Refresh();
         }
-        var tab = new BrowserTab { Address = saved.Address, Title = saved.Title, IsPinned = saved.IsPinned, SpaceId = saved.SpaceId };
+        var tab = new BrowserTab { Address = saved.Address, Title = saved.Title, IsPinned = saved.IsPinned, SpaceId = restoreSpaceId };
         _tabs.Add(tab);
         SelectTab(tab);
         StatusText.Text = "Tab restored";
