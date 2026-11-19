@@ -14,7 +14,6 @@ public partial class MainWindow : Window
     private readonly string _profileFolder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "look", "WebView2");
     private BrowserTab? _active;
-    private bool _isClosing;
 
     public MainWindow()
     {
@@ -229,7 +228,6 @@ public partial class MainWindow : Window
 
     private async void Window_Closed(object? sender, EventArgs e)
     {
-        _isClosing = true;
         foreach (var engine in _engines.Values)
             await engine.DisposeAsync();
         _engines.Clear();
