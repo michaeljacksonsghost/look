@@ -24,4 +24,5 @@ public interface IBrowserEngine : IAsyncDisposable
     event EventHandler<Uri>? AddressChanged;
     event EventHandler<bool>? LoadingChanged;
     event EventHandler<bool>? NavigationFinished;
+    event EventHandler<BrowserDownloadRequest>? DownloadRequested;
 }
