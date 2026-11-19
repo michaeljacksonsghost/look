@@ -258,10 +258,38 @@ public partial class MainWindow : Window
         if (_active is not null && _engines.TryGetValue(_active.Id, out var engine)) await engine.ReloadAsync();
     }
 
+    private void FindTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) { _ = FindActivePageAsync(backwards: (Keyboard.Modifiers & ModifierKeys.Shift) != 0); e.Handled = true; }
+        else if (e.Key == Key.Escape) { CloseFind_Click(this, new RoutedEventArgs()); e.Handled = true; }
+    }
+
+    private async Task FindActivePageAsync(bool backwards = false)
+    {
+        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine))
+            await engine.FindInPageAsync(FindTextBox.Text, backwards);
+    }
+
+    private void FindNext_Click(object sender, RoutedEventArgs e) => _ = FindActivePageAsync();
+    private void FindPrevious_Click(object sender, RoutedEventArgs e) => _ = FindActivePageAsync(backwards: true);
+    private void CloseFind_Click(object sender, RoutedEventArgs e)
+    {
+        FindBar.Visibility = Visibility.Collapsed;
+        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine))
+            _ = engine.FindInPageAsync(string.Empty);
+    }
+
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
-        if (e.Key == Key.L)
+        if (e.Key == Key.F)
+        {
+            FindBar.Visibility = Visibility.Visible;
+            FindTextBox.Focus();
+            FindTextBox.SelectAll();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.L)
         {
             AddressBox.Focus(); AddressBox.SelectAll(); e.Handled = true;
         }
