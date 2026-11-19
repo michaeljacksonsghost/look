@@ -31,7 +31,9 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#292A27" CornerRadius="8,8,0,0" Tag="{Binding}"
+                                <Border Background="#292A27" CornerRadius="8,8,0,0" Tag="{Binding}" AllowDrop="True"
+                                        PreviewMouseLeftButtonDown="Tab_PreviewMouseLeftButtonDown"
+                                        PreviewMouseMove="Tab_PreviewMouseMove" DragOver="Tab_DragOver" Drop="Tab_Drop"
                                         Margin="2,8,2,0" MinWidth="112" MaxWidth="190" Height="38">
                                     <Border.ContextMenu>
                                         <ContextMenu>
