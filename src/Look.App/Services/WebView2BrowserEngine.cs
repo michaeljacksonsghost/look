@@ -223,7 +223,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         html.Append("<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>");
         html.Append("<title>").Append(WebUtility.HtmlEncode(payloadTitle)).Append("</title>");
         html.Append("<style>html{background:#f4f1e9;color:#292820}body{margin:0;padding:56px 24px 96px;font-family:Georgia,serif;font-size:19px;line-height:1.8}main{max-width:740px;margin:0 auto}h1{font-size:2.2rem;line-height:1.2;font-weight:500;margin:0 0 2.2rem}p{margin:0 0 1.25rem;white-space:pre-wrap}::selection{background:#d8d3c6}</style>");
-        html.Append("</head><body><main><h1>").Append(WebUtility.HtmlEncode(payload.Title)).Append("</h1>");
+        html.Append("</head><body><main><h1>").Append(WebUtility.HtmlEncode(payloadTitle)).Append("</h1>");
         foreach (var paragraph in payloadText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
             var trimmed = paragraph.Trim();
@@ -327,7 +327,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         var core = _view.CoreWebView2;
         if (_customCssScriptId is not null)
         {
-            await core.RemoveScriptToExecuteOnDocumentCreatedAsync(_customCssScriptId);
+            core.RemoveScriptToExecuteOnDocumentCreated(_customCssScriptId);
             _customCssScriptId = null;
         }
         _customCssDomain = null;
@@ -514,7 +514,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
                     _resourceFilterAdded = false;
                 }
                 if (_customCssScriptId is not null)
-                    await core.RemoveScriptToExecuteOnDocumentCreatedAsync(_customCssScriptId);
+                    core.RemoveScriptToExecuteOnDocumentCreated(_customCssScriptId);
                 core.Stop();
             }
 
