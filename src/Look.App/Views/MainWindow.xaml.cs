@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private readonly string? _privateDataRoot;
     private FileStream? _privateLock;
     private BrowserTab? _active;
+    private BrowserTab? _splitTab;
     private bool _restoring;
     private Point _tabDragStart;
     private BrowserTab? _tabDragCandidate;
@@ -132,36 +133,151 @@ public partial class MainWindow : Window
     {
         if (tab.SpaceId != _activeSpaceId)
         {
+            if (_splitTab is not null) _splitTab.IsSplit = false;
+            _splitTab = null;
             _activeSpaceId = tab.SpaceId;
             SpaceSelector.SelectedValue = _activeSpaceId;
             _tabView.Refresh();
         }
+
         var previous = _active;
+        if (_splitTab?.Id == tab.Id && previous is not null && previous.Id != tab.Id)
+        {
+            _splitTab = previous;
+            _splitTab.IsSplit = true;
+        }
+
         if (previous is not null) previous.IsActive = false;
-        BrowserHost.Children.Clear();
-        if (previous is not null && previous.Id != tab.Id &&
+        if (previous is not null && previous.Id != tab.Id && previous.Id != _splitTab?.Id &&
             _engines.TryGetValue(previous.Id, out var previousEngine))
             _ = previousEngine.TrySuspendAsync();
 
         _active = tab;
         tab.IsActive = true;
+        if (_splitTab?.Id == tab.Id)
+        {
+            _splitTab.IsSplit = false;
+            _splitTab = null;
+        }
+        if (_splitTab is not null) _splitTab.IsSplit = true;
         AddressBox.Text = tab.Address;
 
         if (_engines.TryGetValue(tab.Id, out var engine))
-        {
             _ = engine.ResumeAsync();
-            WelcomePanel.Visibility = Visibility.Collapsed;
-            BrowserHost.Visibility = Visibility.Visible;
-            BrowserHost.Children.Add(engine.View);
-        }
-        else
+        if (_splitTab is not null && _engines.TryGetValue(_splitTab.Id, out var splitEngine))
+            _ = splitEngine.ResumeAsync();
+
+        RenderBrowserHost();
+        if (!_engines.ContainsKey(tab.Id) && !string.IsNullOrWhiteSpace(tab.Address))
+            _ = NavigateAsync(tab.Address);
+        _ = SaveSessionQuietlyAsync();
+    }
+
+    private void RenderBrowserHost()
+    {
+        BrowserHost.Children.Clear();
+        if (_active is null || !_engines.TryGetValue(_active.Id, out var activeEngine))
         {
             BrowserHost.Visibility = Visibility.Collapsed;
             WelcomePanel.Visibility = Visibility.Visible;
-            if (!string.IsNullOrWhiteSpace(tab.Address))
-                _ = NavigateAsync(tab.Address);
+            return;
         }
-        _ = SaveSessionQuietlyAsync();
+
+        WelcomePanel.Visibility = Visibility.Collapsed;
+        BrowserHost.Visibility = Visibility.Visible;
+
+        if (_splitTab is not null && _engines.TryGetValue(_splitTab.Id, out var splitEngine))
+        {
+            var splitGrid = new Grid();
+            splitGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 180 });
+            splitGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            splitGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 180 });
+
+            var leftPane = new Border
+            {
+                Child = activeEngine.View,
+                BorderBrush = (System.Windows.Media.Brush)FindResource("LineBrush"),
+                BorderThickness = new Thickness(0, 0, 1, 0)
+            };
+            var splitter = new GridSplitter
+            {
+                Width = 6,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                ResizeDirection = GridResizeDirection.Columns,
+                ResizeBehavior = GridResizeBehavior.PreviousAndNext,
+                ShowsPreview = true,
+                Background = (System.Windows.Media.Brush)FindResource("LineBrush")
+            };
+            var rightPane = new Border
+            {
+                Child = splitEngine.View,
+                BorderBrush = (System.Windows.Media.Brush)FindResource("LineBrush"),
+                BorderThickness = new Thickness(1, 0, 0, 0)
+            };
+
+            Grid.SetColumn(leftPane, 0);
+            Grid.SetColumn(splitter, 1);
+            Grid.SetColumn(rightPane, 2);
+            splitGrid.Children.Add(leftPane);
+            splitGrid.Children.Add(splitter);
+            splitGrid.Children.Add(rightPane);
+            BrowserHost.Children.Add(splitGrid);
+        }
+        else
+        {
+            BrowserHost.Children.Add(activeEngine.View);
+        }
+    }
+
+    private async Task OpenSplitViewAsync(BrowserTab secondary)
+    {
+        if (_active is null || secondary.Id == _active.Id) return;
+        if (secondary.SpaceId != _activeSpaceId)
+        {
+            StatusText.Text = "Split view is limited to tabs in the current space";
+            return;
+        }
+
+        try
+        {
+            var alreadyCreated = _engines.ContainsKey(secondary.Id);
+            var engine = await GetOrCreateEngineAsync(secondary);
+            if (!alreadyCreated)
+            {
+                var address = string.IsNullOrWhiteSpace(secondary.Address)
+                    ? new Uri("https://www.google.com/")
+                    : AddressParser.Parse(secondary.Address);
+                secondary.Address = address.AbsoluteUri;
+                await engine.NavigateAsync(address);
+            }
+
+            if (_splitTab is not null) _splitTab.IsSplit = false;
+            _splitTab = secondary;
+            _splitTab.IsSplit = true;
+            await engine.ResumeAsync();
+            RenderBrowserHost();
+            StatusText.Text = "Split view enabled";
+        }
+        catch (Exception ex)
+        {
+            _splitTab = null;
+            StatusText.Text = "Could not open split view";
+            MessageBox.Show($"look could not open the second pane.\n\n{ex.Message}",
+                "Split view", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void CloseSplitView()
+    {
+        if (_splitTab is null) return;
+        _splitTab.IsSplit = false;
+        var secondary = _splitTab;
+        _splitTab = null;
+        if (_engines.TryGetValue(secondary.Id, out var engine))
+            _ = engine.TrySuspendAsync();
+        RenderBrowserHost();
+        StatusText.Text = "Split view closed";
     }
 
     private async Task<IBrowserEngine> GetOrCreateEngineAsync(BrowserTab tab)
