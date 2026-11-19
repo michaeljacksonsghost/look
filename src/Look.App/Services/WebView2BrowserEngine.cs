@@ -26,6 +26,11 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         new(StringComparer.OrdinalIgnoreCase);
 
     private readonly WebView2 _view = new();
+    private CoreWebView2Environment? _environment;
+    private HashSet<string> _blockedDomains = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _allowedDomains = new(StringComparer.OrdinalIgnoreCase);
+    private bool _contentBlockingEnabled;
+    private bool _resourceFilterAdded;
     private string? _environmentKey;
     private EnvironmentEntry? _environmentEntry;
     private bool _initialized;
@@ -67,6 +72,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         {
             var environment = await entry.Environment.Value.WaitAsync(cancellationToken);
             await _view.EnsureCoreWebView2Async(environment);
+            _environment = environment;
             _environmentKey = fullPath;
             _environmentEntry = entry;
         }
@@ -136,6 +142,45 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         var encodedQuery = JsonSerializer.Serialize(query);
         var backwardsLiteral = backwards ? "true" : "false";
         await _view.CoreWebView2.ExecuteScriptAsync($"window.find({encodedQuery}, false, {backwardsLiteral}, true, false, true, false);");
+    }
+
+    public Task ConfigureContentBlockingAsync(BrowserSettings settings)
+    {
+        EnsureInitialized();
+        _blockedDomains = new HashSet<string>(settings.BlockedDomains, StringComparer.OrdinalIgnoreCase);
+        _allowedDomains = new HashSet<string>(settings.AllowedDomains, StringComparer.OrdinalIgnoreCase);
+        _contentBlockingEnabled = settings.ContentBlockingEnabled;
+
+        if (_contentBlockingEnabled && !_resourceFilterAdded)
+        {
+            _view.CoreWebView2.AddWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All);
+            _view.CoreWebView2.WebResourceRequested += OnWebResourceRequested;
+            _resourceFilterAdded = true;
+        }
+        else if (!_contentBlockingEnabled && _resourceFilterAdded)
+        {
+            _view.CoreWebView2.WebResourceRequested -= OnWebResourceRequested;
+            _view.CoreWebView2.RemoveWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All);
+            _resourceFilterAdded = false;
+        }
+        return Task.CompletedTask;
+    }
+
+    private void OnWebResourceRequested(object? sender, CoreWebView2WebResourceRequestedEventArgs e)
+    {
+        if (!_contentBlockingEnabled || _environment is null ||
+            !Uri.TryCreate(e.Request.Uri, UriKind.Absolute, out var uri)) return;
+
+        static bool MatchesDomain(string host, string domain) =>
+            host.Equals(domain, StringComparison.OrdinalIgnoreCase) ||
+            host.EndsWith("." + domain, StringComparison.OrdinalIgnoreCase);
+
+        if (_allowedDomains.Any(domain => MatchesDomain(uri.Host, domain))) return;
+        if (!_blockedDomains.Any(domain => MatchesDomain(uri.Host, domain))) return;
+
+        var body = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("Blocked by look"));
+        e.Response = _environment.CreateWebResourceResponse(body, 403, "Blocked by look",
+            "Content-Type: text/plain; charset=utf-8");
     }
 
     public async Task<IReadOnlyList<BrowserExtensionInfo>> GetExtensionsAsync()
@@ -243,6 +288,12 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             core.NavigationStarting -= OnNavigationStarting;
             core.NavigationCompleted -= OnNavigationCompleted;
             core.DownloadStarting -= OnDownloadStarting;
+            if (_resourceFilterAdded)
+            {
+                core.WebResourceRequested -= OnWebResourceRequested;
+                core.RemoveWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All);
+                _resourceFilterAdded = false;
+            }
             core.Stop();
         }
 
