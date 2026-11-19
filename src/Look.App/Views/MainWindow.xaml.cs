@@ -107,6 +107,7 @@ public partial class MainWindow : Window
         try
         {
             await engine.InitializeAsync(_profileFolder);
+            engine.IsMuted = tab.IsMuted;
             return engine;
         }
         catch
@@ -173,6 +174,55 @@ public partial class MainWindow : Window
         if (_tabs.Count == 0) AddTab();
         else if (wasActive) SelectTab(_tabs[Math.Clamp(index - 1, 0, _tabs.Count - 1)]);
         await SaveSessionAsync();
+    }
+
+    private static BrowserTab? GetContextTab(object sender)
+    {
+        if (sender is not MenuItem item) return null;
+        var contextMenu = item.Parent as ContextMenu;
+        return (contextMenu?.PlacementTarget as FrameworkElement)?.Tag as BrowserTab;
+    }
+
+    private async void PinTab_Click(object sender, RoutedEventArgs e)
+    {
+        var tab = GetContextTab(sender);
+        if (tab is null) return;
+        tab.IsPinned = !tab.IsPinned;
+        await SaveSessionAsync();
+    }
+
+    private async void DuplicateTab_Click(object sender, RoutedEventArgs e)
+    {
+        var tab = GetContextTab(sender);
+        if (tab is null) return;
+        var duplicate = new BrowserTab
+        {
+            Address = tab.Address,
+            Title = tab.Title,
+            IsPinned = false,
+            IsMuted = tab.IsMuted
+        };
+        _tabs.Add(duplicate);
+        SelectTab(duplicate);
+        await SaveSessionAsync();
+    }
+
+    private async void MuteTab_Click(object sender, RoutedEventArgs e)
+    {
+        var tab = GetContextTab(sender);
+        if (tab is null) return;
+        tab.IsMuted = !tab.IsMuted;
+        if (_engines.TryGetValue(tab.Id, out var engine))
+            engine.IsMuted = tab.IsMuted;
+        StatusText.Text = tab.IsMuted ? "Tab muted" : "Tab unmuted";
+        await SaveSessionAsync();
+    }
+
+    private void CloseTabFromMenu_Click(object sender, RoutedEventArgs e)
+    {
+        var tab = GetContextTab(sender);
+        if (tab is not null)
+            CloseTab_Click(new Button { Tag = tab }, new RoutedEventArgs());
     }
 
     private async void Bookmark_Click(object sender, RoutedEventArgs e)
