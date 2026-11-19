@@ -998,21 +998,28 @@ public partial class MainWindow : Window
         {
             Reload_Click(this, new RoutedEventArgs()); e.Handled = true;
         }
-        else if (e.Key >= Key.D1 && e.Key <= Key.D8 && _tabs.Count > 0)
+        else if (e.Key >= Key.D1 && e.Key <= Key.D8)
         {
+            var visibleTabs = _tabs.Where(tab => tab.SpaceId == _activeSpaceId).ToList();
             var targetIndex = (int)e.Key - (int)Key.D1;
-            if (targetIndex < _tabs.Count) SelectTab(_tabs[targetIndex]);
+            if (targetIndex < visibleTabs.Count) SelectTab(visibleTabs[targetIndex]);
             e.Handled = true;
         }
-        else if (e.Key == Key.D9 && _tabs.Count > 0)
+        else if (e.Key == Key.D9)
         {
-            SelectTab(_tabs[^1]); e.Handled = true;
+            var visibleTabs = _tabs.Where(tab => tab.SpaceId == _activeSpaceId).ToList();
+            if (visibleTabs.Count > 0) SelectTab(visibleTabs[^1]);
+            e.Handled = true;
         }
-        else if (e.Key == Key.Tab && _tabs.Count > 1)
+        else if (e.Key == Key.Tab)
         {
-            var index = _active is null ? 0 : _tabs.IndexOf(_active);
-            var backwards = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
-            SelectTab(_tabs[(index + (backwards ? -1 : 1) + _tabs.Count) % _tabs.Count]);
+            var visibleTabs = _tabs.Where(tab => tab.SpaceId == _activeSpaceId).ToList();
+            if (visibleTabs.Count > 1)
+            {
+                var index = _active is null ? 0 : visibleTabs.IndexOf(_active);
+                var backwards = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+                SelectTab(visibleTabs[(index + (backwards ? -1 : 1) + visibleTabs.Count) % visibleTabs.Count]);
+            }
             e.Handled = true;
         }
     }
