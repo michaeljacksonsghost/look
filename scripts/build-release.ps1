@@ -23,7 +23,7 @@ try {
 
     $isccPath = (Get-Command "ISCC.exe" -ErrorAction SilentlyContinue).Source
     if (-not $isccPath) {
-        $candidate = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\\ISCC.exe"
+        $candidate = Join-Path (Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6") "ISCC.exe"
         if (Test-Path $candidate) { $isccPath = $candidate }
     }
     if ($isccPath) {
