@@ -9,6 +9,7 @@ The current development branch contains:
 - Shared environment manager with reference counting for regular and isolated profiles.
 - Navigation, back/forward/reload/stop, and find-in-page.
 - Tab close, duplicate, pin, mute, drag reorder, keyboard shortcuts, and background tab suspend/resume.
+- Persistent Spaces: create named workspaces, filter the tab strip by active space, and move tabs between spaces.
 - Local JSON persistence for session tabs (autosaved on navigation/tab changes), recently closed tabs, bookmarks, history, and downloads.
 - Searchable Library window for bookmarks, full browsing history, and downloads, with individual deletion and open actions.
 - Save-as download flow, executable-file warning, completion/interruption tracking, and recent downloads list.
