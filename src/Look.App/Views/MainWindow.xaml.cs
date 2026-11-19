@@ -169,6 +169,9 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is not BrowserTab tab) return;
         var index = _tabs.IndexOf(tab);
         var wasActive = _active?.Id == tab.Id;
+        if (Uri.TryCreate(tab.Address, UriKind.Absolute, out var closedUri) &&
+            (closedUri.Scheme == Uri.UriSchemeHttp || closedUri.Scheme == Uri.UriSchemeHttps))
+            await _dataStore.AddRecentlyClosedAsync(new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned));
         if (wasActive) { BrowserHost.Children.Clear(); BrowserHost.Visibility = Visibility.Collapsed; }
         _tabs.Remove(tab);
         if (_engines.Remove(tab.Id, out var engine)) await engine.DisposeAsync();
@@ -373,6 +376,23 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is string address) _ = NavigateAsync(address);
     }
 
+    private async Task RestoreClosedTabAsync()
+    {
+        var recentlyClosed = await _dataStore.GetRecentlyClosedAsync();
+        if (recentlyClosed.Count == 0)
+        {
+            StatusText.Text = "No recently closed tabs";
+            return;
+        }
+
+        var saved = recentlyClosed[0];
+        await _dataStore.RemoveRecentlyClosedAsync(saved.Address);
+        var tab = new BrowserTab { Address = saved.Address, Title = saved.Title, IsPinned = saved.IsPinned };
+        _tabs.Add(tab);
+        SelectTab(tab);
+        StatusText.Text = "Tab restored";
+    }
+
     private async Task SaveSessionAsync()
     {
         if (_restoring) return;
@@ -435,6 +455,10 @@ public partial class MainWindow : Window
         else if (e.Key == Key.L)
         {
             AddressBox.Focus(); AddressBox.SelectAll(); e.Handled = true;
+        }
+        else if (e.Key == Key.T && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+        {
+            _ = RestoreClosedTabAsync(); e.Handled = true;
         }
         else if (e.Key == Key.T)
         {
