@@ -13,6 +13,7 @@ public partial class MainWindow : Window
 {
     private readonly ObservableCollection<BrowserTab> _tabs = new();
     private readonly Dictionary<Guid, IBrowserEngine> _engines = new();
+    private readonly IBrowserEngineFactory _engineFactory;
     private readonly BrowserDataStore _dataStore;
     private readonly string _profileFolder;
     private readonly bool _isPrivate;
@@ -22,8 +23,9 @@ public partial class MainWindow : Window
     private Point _tabDragStart;
     private BrowserTab? _tabDragCandidate;
 
-    public MainWindow(bool isPrivate = false)
+    public MainWindow(bool isPrivate = false, IBrowserEngineFactory? engineFactory = null)
     {
+        _engineFactory = engineFactory ?? ((App)Application.Current).BrowserEngineFactory;
         _isPrivate = isPrivate;
         if (_isPrivate)
         {
@@ -112,7 +114,7 @@ public partial class MainWindow : Window
     {
         if (_engines.TryGetValue(tab.Id, out var existing)) return existing;
 
-        var engine = new WebView2BrowserEngine();
+        var engine = _engineFactory.Create();
         _engines.Add(tab.Id, engine);
         engine.TitleChanged += (_, title) => tab.Title = title;
         engine.AddressChanged += (_, uri) =>
@@ -336,7 +338,7 @@ public partial class MainWindow : Window
     {
         var menu = new ContextMenu();
         var privateWindow = new MenuItem { Header = "New private window" };
-        privateWindow.Click += (_, _) => new MainWindow(isPrivate: true).Show();
+        privateWindow.Click += (_, _) => new MainWindow(isPrivate: true, engineFactory: _engineFactory).Show();
         menu.Items.Add(privateWindow);
         var addBookmark = new MenuItem { Header = "Add / remove bookmark" };
         addBookmark.Click += Bookmark_Click;
