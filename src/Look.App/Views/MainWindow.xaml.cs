@@ -90,6 +90,7 @@ public partial class MainWindow : Window
         var tab = new BrowserTab();
         _tabs.Add(tab);
         SelectTab(tab);
+        _ = SaveSessionQuietlyAsync();
     }
 
     private void SelectTab(BrowserTab tab)
@@ -206,6 +207,8 @@ public partial class MainWindow : Window
             }
             if (_active?.Id != tab.Id)
                 await engine.TrySuspendAsync();
+            else
+                await SaveSessionQuietlyAsync();
         };
 
         var initialization = InitializeEngineAsync(engine, tab);
@@ -717,6 +720,12 @@ public partial class MainWindow : Window
         _tabs.Add(tab);
         SelectTab(tab);
         StatusText.Text = "Tab restored";
+    }
+
+    private async Task SaveSessionQuietlyAsync()
+    {
+        try { await SaveSessionAsync(); }
+        catch (IOException) { if (!_isPrivate) StatusText.Text = "Session could not be saved"; }
     }
 
     private async Task SaveSessionAsync()
