@@ -49,12 +49,15 @@ public sealed class BrowserDataStore
     }
 
     public async Task SaveSessionAsync(IReadOnlyCollection<BrowserSessionTab> tabs, int activeIndex,
+        IReadOnlyCollection<BrowserSpace>? spaces = null, string? activeSpaceId = null,
         CancellationToken cancellationToken = default)
     {
         await MutateAsync(data =>
         {
             data.SessionTabs = tabs.ToList();
             data.ActiveTabIndex = tabs.Count == 0 ? 0 : Math.Clamp(activeIndex, 0, tabs.Count - 1);
+            if (spaces is not null) data.Spaces = spaces.ToList();
+            if (activeSpaceId is not null) data.ActiveSpaceId = activeSpaceId;
         }, cancellationToken);
     }
 
@@ -245,6 +248,8 @@ public sealed class BrowserDataStore
     {
         SchemaVersion = data.SchemaVersion,
         SessionTabs = data.SessionTabs.ToList(),
+        Spaces = data.Spaces.ToList(),
+        ActiveSpaceId = data.ActiveSpaceId,
         RecentlyClosedTabs = data.RecentlyClosedTabs.ToList(),
         ActiveTabIndex = data.ActiveTabIndex,
         Bookmarks = data.Bookmarks.ToList(),
