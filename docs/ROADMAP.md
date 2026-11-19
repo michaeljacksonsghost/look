@@ -22,7 +22,8 @@
 - [x] Add local session restore, recently closed tabs, bookmarks, and history.
 - [x] Add save-as downloads and a recent downloads list.
 - [ ] Add history search and per-entry deletion.
-- [ ] Add lazy tab suspension/resume and renderer crash recovery.
+- [x] Add background tab suspend/resume (runtime verification pending).
+- [ ] Add renderer crash recovery.
 - [ ] Add complete keyboard shortcut map and tab switcher.
 - [ ] Add tests for tab lifecycle and session recovery.
 
@@ -38,8 +39,9 @@
 - [ ] Picture-in-picture and media controls.
 
 ## 4 — Privacy and security
-- [ ] Verify private profile cleanup on normal close, crash, and app restart.
-- [ ] Site permission controls and revocation.
+- [x] Implement private profile cleanup on normal close and stale-folder cleanup at next startup (runtime/privacy verification pending).
+- [x] Add per-request site permission prompts (default deny, allow once).
+- [ ] Add permission review/revocation UI for any future persisted grants.
 - [ ] Windows Credential Manager / DPAPI vault.
 - [ ] No automatic password filling.
 - [ ] Safe-download executable warning flow.
