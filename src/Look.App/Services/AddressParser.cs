@@ -19,6 +19,17 @@ public static class AddressParser
                 return Search(value);
         }
 
+        var colonIndex = value.IndexOf(':');
+        var slashIndex = value.IndexOf('/');
+        if (colonIndex > 0 && (slashIndex < 0 || colonIndex < slashIndex))
+        {
+            var prefix = value[..colonIndex];
+            var hostWithPort = prefix.Contains('.') ||
+                string.Equals(prefix, "localhost", StringComparison.OrdinalIgnoreCase);
+            if (!hostWithPort && Uri.CheckSchemeName(prefix))
+                return Search(value);
+        }
+
         var looksLikeHost = !value.Contains(' ') &&
             (value.Contains('.') || value.StartsWith("localhost", StringComparison.OrdinalIgnoreCase)) &&
             !value.Contains("://", StringComparison.Ordinal);
