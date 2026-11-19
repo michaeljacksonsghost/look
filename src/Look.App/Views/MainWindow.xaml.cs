@@ -322,6 +322,133 @@ public partial class MainWindow : Window
         if (e.Key == Key.Enter) { _ = NavigateAsync(WelcomeAddress.Text); e.Handled = true; }
     }
 
+    private void SpaceSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_restoring || SpaceSelector.SelectedValue is not string selectedId ||
+            string.Equals(selectedId, _activeSpaceId, StringComparison.Ordinal)) return;
+
+        var previous = _active;
+        if (previous is not null) previous.IsActive = false;
+        BrowserHost.Children.Clear();
+        BrowserHost.Visibility = Visibility.Collapsed;
+        if (previous is not null && _engines.TryGetValue(previous.Id, out var previousEngine))
+            _ = previousEngine.TrySuspendAsync();
+
+        _active = null;
+        _activeSpaceId = selectedId;
+        _tabView.Refresh();
+        var firstTab = _tabs.FirstOrDefault(tab => tab.SpaceId == _activeSpaceId);
+        if (firstTab is not null) SelectTab(firstTab);
+        else AddTab();
+        _ = SaveSessionQuietlyAsync();
+    }
+
+    private void NewSpace_Click(object sender, RoutedEventArgs e)
+    {
+        var name = PromptForSpaceName();
+        if (string.IsNullOrWhiteSpace(name)) return;
+        var existing = _spaces.FirstOrDefault(space =>
+            string.Equals(space.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            SpaceSelector.SelectedValue = existing.Id;
+            return;
+        }
+
+        var space = new BrowserSpace(Guid.NewGuid().ToString("N"), name, DateTimeOffset.UtcNow);
+        _spaces.Add(space);
+        SpaceSelector.SelectedValue = space.Id;
+        _ = SaveSessionQuietlyAsync();
+    }
+
+    private string? PromptForSpaceName()
+    {
+        var dialog = new Window
+        {
+            Title = "Create a space",
+            Width = 360,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+            ResizeMode = ResizeMode.NoResize,
+            Background = (System.Windows.Media.Brush)FindResource("PanelBrush"),
+            Foreground = (System.Windows.Media.Brush)FindResource("InkBrush")
+        };
+        var layout = new StackPanel { Margin = new Thickness(20) };
+        layout.Children.Add(new TextBlock { Text = "Give this space a name", Margin = new Thickness(0, 0, 0, 10) });
+        var input = new TextBox
+        {
+            MinWidth = 280,
+            Padding = new Thickness(9, 6, 9, 6),
+            Background = (System.Windows.Media.Brush)FindResource("CanvasBrush"),
+            Foreground = (System.Windows.Media.Brush)FindResource("InkBrush"),
+            BorderBrush = (System.Windows.Media.Brush)FindResource("LineBrush")
+        };
+        layout.Children.Add(input);
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+        var cancel = new Button { Content = "Cancel", Style = (Style)FindResource("QuietButton"), Margin = new Thickness(0, 0, 8, 0) };
+        cancel.Click += (_, _) => dialog.DialogResult = false;
+        var create = new Button { Content = "Create", Style = (Style)FindResource("QuietButton"), IsDefault = true };
+        create.Click += (_, _) => dialog.DialogResult = true;
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(create);
+        layout.Children.Add(buttons);
+        dialog.Content = layout;
+        dialog.Loaded += (_, _) => input.Focus();
+        return dialog.ShowDialog() == true ? input.Text.Trim() : null;
+    }
+
+    private void TabContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu ||
+            (menu.PlacementTarget as FrameworkElement)?.Tag is not BrowserTab tab) return;
+
+        var moveMenu = menu.Items.OfType<MenuItem>()
+            .FirstOrDefault(item => string.Equals(item.Header?.ToString(), "Move to space", StringComparison.Ordinal));
+        if (moveMenu is null) return;
+        moveMenu.Items.Clear();
+
+        foreach (var space in _spaces.Where(space => space.Id != tab.SpaceId))
+        {
+            var item = new MenuItem { Header = space.Name, Tag = (tab, space.Id) };
+            item.Click += MoveTabToSpace_Click;
+            moveMenu.Items.Add(item);
+        }
+        if (moveMenu.Items.Count == 0)
+            moveMenu.Items.Add(new MenuItem { Header = "No other spaces", IsEnabled = false });
+    }
+
+    private async void MoveTabToSpace_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as MenuItem)?.Tag is not ValueTuple<BrowserTab, string> move) return;
+        var tab = move.Item1;
+        var wasActive = _active?.Id == tab.Id;
+        if (wasActive)
+        {
+            tab.IsActive = false;
+            _active = null;
+            BrowserHost.Children.Clear();
+            BrowserHost.Visibility = Visibility.Collapsed;
+            if (_engines.TryGetValue(tab.Id, out var engine))
+                await engine.TrySuspendAsync();
+        }
+
+        tab.SpaceId = move.Item2;
+        _tabView.Refresh();
+        if (wasActive)
+        {
+            var next = _tabs.FirstOrDefault(item => item.SpaceId == _activeSpaceId);
+            if (next is not null) SelectTab(next);
+            else AddTab();
+        }
+        await SaveSessionAsync();
+    }
+
     private void NewTab_Click(object sender, RoutedEventArgs e) { AddTab(); WelcomeAddress.Focus(); }
 
     private void Tab_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
