@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        Title="look" Width="1380" Height="880" MinWidth="760" MinHeight="520"
+        Title="look" Width="1380" Height="880" MinWidth="820" MinHeight="560"
         WindowStyle="None" ResizeMode="CanResize" AllowsTransparency="False"
         Background="{StaticResource CanvasBrush}" Foreground="{StaticResource InkBrush}"
         WindowStartupLocation="CenterScreen" PreviewKeyDown="Window_PreviewKeyDown"
@@ -12,27 +12,23 @@
                             GlassFrameThickness="0" CornerRadius="0"
                             UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
-    <Grid>
+    <Grid Background="{StaticResource CanvasBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="36"/>
             <RowDefinition Height="54"/>
-            <RowDefinition Height="48"/>
+            <RowDefinition Height="58"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="24"/>
+            <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Background="#151613">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="#151613"
-                    MouseLeftButtonDown="WindowTitleBar_MouseLeftButtonDown">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0">
-                    <TextBlock Text="look" FontSize="15" FontWeight="SemiBold"
-                               Foreground="{StaticResource InkBrush}"/>
-                    <TextBlock Text="  /  a quieter way to browse" FontSize="10"
-                               Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
+        <!-- Native-feeling titlebar -->
+        <Grid Grid.Row="0" Background="#F0EFE9">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="#F0EFE9" MouseLeftButtonDown="WindowTitleBar_MouseLeftButtonDown">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <TextBlock Text="look" FontSize="14" FontWeight="SemiBold" Foreground="#33372F"/>
+                    <TextBlock Text="   /   BROWSE WITH INTENTION" FontSize="9" FontWeight="SemiBold"
+                               Foreground="#8A8B82" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Stretch">
@@ -45,50 +41,51 @@
             </StackPanel>
         </Grid>
 
+        <!-- Tabs and workspace -->
         <Border Grid.Row="1" Background="{StaticResource PanelBrush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
-            <DockPanel Margin="12,0">
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left"
-                            VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="WORKSPACE" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}"/>
-                    <TextBlock x:Name="ModeText" Text=" / quietly yours" Foreground="{StaticResource MutedBrush}"
-                               Margin="8,0" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="SpaceSelector" Width="126" Margin="12,0,4,0" Padding="7,3"
+            <DockPanel LastChildFill="True" Margin="18,0,14,0">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,18,0">
+                    <TextBlock Text="SPACE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="0,0,9,0"/>
+                    <ComboBox x:Name="SpaceSelector" Width="128" Margin="0,0,4,0" Padding="8,4"
                               Background="{StaticResource PanelBrush}" Foreground="{StaticResource InkBrush}"
                               BorderBrush="{StaticResource LineBrush}" FontSize="11"
                               DisplayMemberPath="Name" SelectedValuePath="Id"
                               SelectionChanged="SpaceSelector_SelectionChanged"/>
                     <Button Content="＋" Click="NewSpace_Click" ToolTip="Create a space"
-                            Style="{StaticResource QuietButton}" FontSize="15"/>
+                            Style="{StaticResource QuietButton}" FontSize="15" Padding="8,5"/>
+                    <Border Width="1" Height="22" Background="{StaticResource LineBrush}" Margin="12,0"/>
                 </StackPanel>
                 <Button DockPanel.Dock="Right" Content="＋" Click="NewTab_Click"
-                        Style="{StaticResource QuietButton}" FontSize="20"/>
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                        Style="{StaticResource QuietButton}" FontSize="19" ToolTip="New tab" Margin="8,0,0,0"/>
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                              VerticalAlignment="Center">
                     <ItemsControl x:Name="TabsList">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="8,8,0,0" Tag="{Binding}" AllowDrop="True"
+                                <Border CornerRadius="9" Tag="{Binding}" AllowDrop="True"
                                         PreviewMouseLeftButtonDown="Tab_PreviewMouseLeftButtonDown"
                                         PreviewMouseMove="Tab_PreviewMouseMove" DragOver="Tab_DragOver" Drop="Tab_Drop"
-                                        Margin="2,8,2,0" MinWidth="112" MaxWidth="190" Height="38">
+                                        Margin="3,5" MinWidth="118" MaxWidth="205" Height="36">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#20211F"/>
+                                            <Setter Property="Background" Value="Transparent"/>
                                             <Setter Property="BorderBrush" Value="Transparent"/>
-                                            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                    <Setter Property="Background" Value="#343531"/>
-                                                    <Setter Property="BorderBrush" Value="#D5D5CF"/>
+                                                    <Setter Property="Background" Value="#EEEDE6"/>
+                                                    <Setter Property="BorderBrush" Value="#E2E1D9"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding IsSplit}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="#A9A99F"/>
+                                                    <Setter Property="BorderBrush" Value="#9CA58F"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding IsLoading}" Value="True">
-                                                    <Setter Property="BorderBrush" Value="#9C9C94"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -105,13 +102,13 @@
                                             <MenuItem Header="Close tab" Click="CloseTabFromMenu_Click"/>
                                         </ContextMenu>
                                     </Border.ContextMenu>
-                                    <DockPanel>
+                                    <DockPanel LastChildFill="True" VerticalAlignment="Center">
                                         <Button Content="×" Tag="{Binding}" Click="CloseTab_Click"
                                                 Style="{StaticResource QuietButton}" DockPanel.Dock="Right"
-                                                Padding="8,2"/>
+                                                Padding="7,2" FontSize="12" Foreground="{StaticResource MutedBrush}"/>
                                         <Button Content="{Binding DisplayTitle}" Tag="{Binding}"
                                                 Click="SelectTab_Click" Style="{StaticResource QuietButton}"
-                                                Padding="10,2"/>
+                                                Padding="9,3" FontSize="11" HorizontalContentAlignment="Left"/>
                                     </DockPanel>
                                 </Border>
                             </DataTemplate>
@@ -121,65 +118,70 @@
             </DockPanel>
         </Border>
 
-        <Grid Grid.Row="2" Margin="12,6">
+        <!-- Navigation -->
+        <Grid Grid.Row="2" Margin="20,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Content="‹" Click="Back_Click" Style="{StaticResource QuietButton}" FontSize="21"/>
-            <Button Grid.Column="1" Content="›" Click="Forward_Click"
-                    Style="{StaticResource QuietButton}" FontSize="21"/>
-            <Button Grid.Column="2" Content="↻" Click="Reload_Click" Style="{StaticResource QuietButton}"/>
-            <Button Grid.Column="3" Content="×" Click="Stop_Click" ToolTip="Stop loading" Style="{StaticResource QuietButton}"/>
-            <Border Grid.Column="4" Background="{StaticResource PanelBrush}" CornerRadius="9"
-                    BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Margin="8,0">
-                <TextBox x:Name="AddressBox" Background="Transparent" Foreground="{StaticResource InkBrush}"
-                         BorderThickness="0" VerticalContentAlignment="Center" Padding="12,0"
-                         FontSize="13" KeyDown="AddressBox_KeyDown"/>
+            <Button Content="←" Click="Back_Click" Style="{StaticResource QuietButton}" FontSize="18" ToolTip="Back"/>
+            <Button Grid.Column="1" Content="→" Click="Forward_Click" Style="{StaticResource QuietButton}" FontSize="18" ToolTip="Forward"/>
+            <Button Grid.Column="2" Content="↻" Click="Reload_Click" Style="{StaticResource QuietButton}" FontSize="15" ToolTip="Reload"/>
+            <Button Grid.Column="3" Content="×" Click="Stop_Click" ToolTip="Stop loading" Style="{StaticResource QuietButton}" FontSize="15"/>
+            <Border Grid.Column="4" Background="#ECEBE5" CornerRadius="12"
+                    BorderBrush="#E1E0D8" BorderThickness="1" Margin="12,0">
+                <DockPanel LastChildFill="True" Margin="12,0">
+                    <TextBlock Text="⌕" FontSize="18" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="0,0,9,0"/>
+                    <TextBox x:Name="AddressBox" Background="Transparent" Foreground="{StaticResource InkBrush}"
+                             BorderThickness="0" VerticalContentAlignment="Center" Padding="0"
+                             FontSize="12" KeyDown="AddressBox_KeyDown"/>
+                </DockPanel>
             </Border>
-            <Button Grid.Column="5" Content="↵" Click="Search_Click" ToolTip="Search / go" Style="{StaticResource QuietButton}" FontSize="15"/>
-            <Button Grid.Column="6" Content="☆" Click="Bookmark_Click" ToolTip="Add or remove bookmark" Style="{StaticResource QuietButton}" FontSize="17"/>
-            <Button Grid.Column="7" Content="···" Click="Menu_Click" Style="{StaticResource QuietButton}"/>
+            <Button Grid.Column="5" Content="↵" Click="Search_Click" ToolTip="Search / go"
+                    Style="{StaticResource QuietButton}" FontSize="15"/>
+            <Button Grid.Column="6" Content="☆" Click="Bookmark_Click" ToolTip="Add or remove bookmark"
+                    Style="{StaticResource QuietButton}" FontSize="17"/>
+            <Button Grid.Column="7" Content="···" Click="Menu_Click" Style="{StaticResource QuietButton}" ToolTip="More"/>
         </Grid>
 
-        <Grid Grid.Row="3">
+        <!-- Page surface -->
+        <Grid Grid.Row="3" Background="{StaticResource CanvasBrush}">
             <Grid x:Name="WelcomePanel">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="460">
-                    <TextBlock Text="look" FontSize="58" FontWeight="Light" HorizontalAlignment="Center"/>
-                    <TextBlock Text="A little less browser. A little more browsing."
-                               FontSize="14" Foreground="{StaticResource MutedBrush}"
-                               HorizontalAlignment="Center" Margin="0,4,0,28"/>
-                    <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}"
-                            BorderThickness="1" CornerRadius="14" Padding="10">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="500">
+                    <TextBlock Text="A CLEARER KIND OF BROWSING" FontSize="9" FontWeight="Bold"
+                               CharacterSpacing="180" Foreground="{StaticResource AccentBrush}"
+                               HorizontalAlignment="Center" Margin="0,0,0,22"/>
+                    <TextBlock Text="the web, with room to think." FontSize="36" FontWeight="Light"
+                               Foreground="#30342D" HorizontalAlignment="Center" TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="A little less noise. A little more of what you're looking for."
+                               FontSize="13" Foreground="{StaticResource MutedBrush}"
+                               HorizontalAlignment="Center" TextAlignment="Center" Margin="0,13,0,34"/>
+                    <Border Background="{StaticResource PanelBrush}" BorderBrush="#DCDCD3"
+                            BorderThickness="1" CornerRadius="14" Padding="9">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <TextBox x:Name="WelcomeAddress" Background="Transparent"
                                      Foreground="{StaticResource InkBrush}" BorderThickness="0"
-                                     FontSize="15" Padding="8,10" VerticalContentAlignment="Center"
+                                     FontSize="14" Padding="12,11" VerticalContentAlignment="Center"
                                      KeyDown="WelcomeAddress_KeyDown"
                                      ToolTip="Search the web or enter a website address"/>
                             <Button Grid.Column="1" Content="Search  ↗" Click="SearchWelcome_Click"
-                                    Style="{StaticResource QuietButton}" Padding="14,9"
-                                    Background="#343531"/>
+                                    Style="{StaticResource QuietButton}" Padding="18,10"
+                                    Background="#68745F" Foreground="White" FontSize="12"/>
                         </Grid>
                     </Border>
-                    <TextBlock Text="Enter a search or paste a URL" FontSize="10"
-                               Foreground="{StaticResource MutedBrush}" Margin="4,10,0,0"
-                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="SEARCH THE WEB  ·  OR ENTER A WEBSITE ADDRESS" FontSize="9"
+                               Foreground="{StaticResource MutedBrush}" Margin="0,13,0,0"
+                               HorizontalAlignment="Center" CharacterSpacing="80"/>
                 </StackPanel>
             </Grid>
             <Grid x:Name="BrowserHost" Visibility="Collapsed"/>
             <Border x:Name="FindBar" HorizontalAlignment="Right" VerticalAlignment="Top"
-                    Margin="0,12,16,0" Padding="8" CornerRadius="9"
+                    Margin="0,14,18,0" Padding="8" CornerRadius="11"
                     Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}"
                     BorderThickness="1" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
@@ -194,10 +196,10 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="4" Background="{StaticResource PanelBrush}"
-                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
-            <DockPanel Margin="12,0">
-                <TextBlock x:Name="FooterLabel" Text="LOOK · LOCAL FIRST" FontSize="9"
+        <!-- Status -->
+        <Border Grid.Row="4" Background="#F0EFE9" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
+            <DockPanel Margin="20,0">
+                <TextBlock x:Name="FooterLabel" Text="LOOK  /  YOUR SPACE ON THE WEB" FontSize="9"
                            Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
                 <TextBlock x:Name="StatusText" Text="Ready" FontSize="9"
                            Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"
