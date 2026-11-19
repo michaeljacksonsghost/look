@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private readonly string _profileFolder;
     private readonly bool _isPrivate;
     private readonly string? _privateDataRoot;
+    private FileStream? _privateLock;
     private BrowserTab? _active;
     private bool _restoring;
     private Point _tabDragStart;
@@ -33,6 +34,8 @@ public partial class MainWindow : Window
         {
             _privateDataRoot = Path.Combine(Path.GetTempPath(), "look-private", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_privateDataRoot);
+            _privateLock = new FileStream(Path.Combine(_privateDataRoot, "private.lock"),
+                FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
             _dataStore = new BrowserDataStore(Path.Combine(_privateDataRoot, "browser-data.json"));
             _profileFolder = Path.Combine(_privateDataRoot, "WebView2");
         }
@@ -821,6 +824,8 @@ public partial class MainWindow : Window
         }
         foreach (var engine in _engines.Values) await engine.DisposeAsync();
         _engines.Clear();
+        _privateLock?.Dispose();
+        _privateLock = null;
         if (_privateDataRoot is not null && Directory.Exists(_privateDataRoot))
         {
             try { Directory.Delete(_privateDataRoot, recursive: true); }
