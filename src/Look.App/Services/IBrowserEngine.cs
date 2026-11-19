@@ -27,10 +27,12 @@ public interface IBrowserEngine : IAsyncDisposable
     bool IsReaderMode { get; }
     Task SetReaderModeAsync(bool enabled);
     Task SetCustomCssAsync(string domain, string css);
+    Task StartElementPickerAsync();
     event EventHandler<string>? TitleChanged;
     event EventHandler<Uri>? AddressChanged;
     event EventHandler<bool>? LoadingChanged;
     event EventHandler<bool>? NavigationFinished;
     event EventHandler<BrowserDownloadRequest>? DownloadRequested;
     event EventHandler<BrowserPermissionRequest>? PermissionRequested;
+    event EventHandler<string>? ElementPicked;
 }
