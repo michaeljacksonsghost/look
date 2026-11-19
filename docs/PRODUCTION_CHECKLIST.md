@@ -40,7 +40,7 @@ This is the release acceptance checklist for the Windows browser. A feature is n
 - [ ] Per-site content blocking and allow-list exceptions.
 - [ ] Element hiding/custom CSS applied before first paint where possible.
 - [ ] Picture-in-picture and media controls.
-- [ ] Tab switcher, peek links, and useful context menus.
+- [ ] Peek links and remaining context-menu polish.
 
 ## 4. Privacy and security
 - [ ] No account, ads, analytics, or telemetry by default.
@@ -101,6 +101,7 @@ The following capabilities now have initial code paths, but remain unchecked abo
 - Per-domain custom CSS editor with document-creation injection and click-to-hide element picker.
 - Persistent Spaces with tab filtering and move-between-space actions.
 - Searchable Library for bookmarks, history, and downloads, with individual deletion.
+- Searchable tab switcher across all Spaces (Ctrl+Shift+A).
 - Per-request site permission prompts that default to deny and do not persist grants.
 - Executable-download warning flow.
 - Private-window temporary profiles with normal-close deletion and stale-folder cleanup on next startup.
