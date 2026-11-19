@@ -20,6 +20,7 @@ dotnet run --project .\src\Look.App\Look.App.csproj
 - Navigation, back/forward, reload, stop, and address/search.
 - Tab close, duplicate, pin, mute, drag reorder, and keyboard switching.
 - Named Spaces for organizing tabs and moving tabs between workspaces.
+- Resizable two-pane split browsing with pane switching.
 - Find-in-page.
 - Local session restore, recently closed tabs, bookmarks, history, and downloads.
 - Searchable Library window with individual item deletion.
