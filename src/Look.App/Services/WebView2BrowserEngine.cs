@@ -59,6 +59,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     public event EventHandler<bool>? NavigationFinished;
     public event EventHandler<BrowserDownloadRequest>? DownloadRequested;
     public event EventHandler<BrowserPermissionRequest>? PermissionRequested;
+    public event EventHandler<string>? ElementPicked;
 
     public async Task InitializeAsync(string userDataFolder, CancellationToken cancellationToken = default)
     {
@@ -103,6 +104,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         core.NavigationCompleted += OnNavigationCompleted;
         core.DownloadStarting += OnDownloadStarting;
         core.PermissionRequested += OnPermissionRequested;
+        core.WebMessageReceived += OnWebMessageReceived;
         _initialized = true;
     }
 
@@ -231,6 +233,91 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
 
         _readerSourceUri = current.AbsoluteUri;
         _view.CoreWebView2.NavigateToString(html.ToString());
+    }
+
+    public Task StartElementPickerAsync()
+    {
+        EnsureInitialized();
+        const string script = @"(() => {
+            if (window.__lookElementPicker) return;
+            const style = document.createElement('style');
+            style.id = 'look-element-picker-style';
+            style.textContent = '*{cursor:crosshair!important}';
+            (document.head || document.documentElement).appendChild(style);
+            let previous = null;
+            let previousOutline = '';
+            const cleanup = () => {
+                document.removeEventListener('mouseover', onOver, true);
+                document.removeEventListener('click', onClick, true);
+                window.removeEventListener('keydown', onKey, true);
+                if (previous) previous.style.outline = previousOutline;
+                style.remove();
+                delete window.__lookElementPicker;
+            };
+            const makeSelector = (element) => {
+                if (element.id) return '#' + CSS.escape(element.id);
+                const parts = [];
+                let node = element;
+                while (node && node.nodeType === 1 && parts.length < 5) {
+                    let part = node.tagName.toLowerCase();
+                    if (node.classList.length)
+                        part += '.' + Array.from(node.classList).slice(0, 2).map(name => CSS.escape(name)).join('.');
+                    const parent = node.parentElement;
+                    if (parent) {
+                        const siblings = Array.from(parent.children).filter(item => item.tagName === node.tagName);
+                        if (siblings.length > 1) part += ':nth-of-type(' + (siblings.indexOf(node) + 1) + ')';
+                    }
+                    parts.unshift(part);
+                    node = parent;
+                }
+                return parts.join(' > ');
+            };
+            const onOver = (event) => {
+                const element = event.target instanceof Element ? event.target : event.target.parentElement;
+                if (!element || element === previous) return;
+                if (previous) previous.style.outline = previousOutline;
+                previous = element;
+                previousOutline = element.style.outline;
+                element.style.outline = '2px solid #8f9b83';
+            };
+            const onClick = (event) => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const element = event.target instanceof Element ? event.target : event.target.parentElement;
+                const selector = element ? makeSelector(element) : '';
+                cleanup();
+                window.chrome.webview.postMessage({ type: 'look-element-picked', selector });
+            };
+            const onKey = (event) => {
+                if (event.key === 'Escape') {
+                    cleanup();
+                    window.chrome.webview.postMessage({ type: 'look-element-picker-cancelled' });
+                }
+            };
+            window.__lookElementPicker = true;
+            document.addEventListener('mouseover', onOver, true);
+            document.addEventListener('click', onClick, true);
+            window.addEventListener('keydown', onKey, true);
+        })();";
+        return _view.CoreWebView2.ExecuteScriptAsync(script);
+    }
+
+    private void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        try
+        {
+            using var message = JsonDocument.Parse(e.WebMessageAsJson);
+            var root = message.RootElement;
+            if (root.TryGetProperty("type", out var type) &&
+                type.GetString() == "look-element-picked" &&
+                root.TryGetProperty("selector", out var selector))
+            {
+                var value = selector.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                    ElementPicked?.Invoke(this, value);
+            }
+        }
+        catch (JsonException) { /* Ignore messages that are not look picker payloads. */ }
     }
 
     public async Task SetCustomCssAsync(string domain, string css)
@@ -417,6 +504,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
                 core.NavigationCompleted -= OnNavigationCompleted;
                 core.DownloadStarting -= OnDownloadStarting;
                 core.PermissionRequested -= OnPermissionRequested;
+                core.WebMessageReceived -= OnWebMessageReceived;
                 if (_resourceFilterAdded)
                 {
                     core.WebResourceRequested -= OnWebResourceRequested;
@@ -435,6 +523,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             NavigationFinished = null;
             DownloadRequested = null;
             PermissionRequested = null;
+            ElementPicked = null;
             _readerSourceUri = null;
             _customCssScriptId = null;
             _customCssDomain = null;
