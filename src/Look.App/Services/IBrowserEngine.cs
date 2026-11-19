@@ -24,6 +24,8 @@ public interface IBrowserEngine : IAsyncDisposable
     bool IsMuted { get; set; }
     bool CanGoBack { get; }
     bool CanGoForward { get; }
+    bool IsReaderMode { get; }
+    Task SetReaderModeAsync(bool enabled);
     event EventHandler<string>? TitleChanged;
     event EventHandler<Uri>? AddressChanged;
     event EventHandler<bool>? LoadingChanged;
