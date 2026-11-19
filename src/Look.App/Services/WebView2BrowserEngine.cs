@@ -26,6 +26,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         new(StringComparer.OrdinalIgnoreCase);
 
     private readonly WebView2 _view = new();
+    private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
     private CoreWebView2Environment? _environment;
     private HashSet<string> _blockedDomains = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _allowedDomains = new(StringComparer.OrdinalIgnoreCase);
@@ -130,19 +131,29 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
 
     public async Task<bool> TrySuspendAsync()
     {
-        if (!_initialized || _isSuspended) return _isSuspended;
-        _isSuspended = await _view.CoreWebView2.TrySuspendAsync();
-        return _isSuspended;
+        await _lifecycleGate.WaitAsync();
+        try
+        {
+            if (!_initialized || _isSuspended) return _isSuspended;
+            try { _isSuspended = await _view.CoreWebView2.TrySuspendAsync(); }
+            catch (InvalidOperationException) { _isSuspended = false; }
+            return _isSuspended;
+        }
+        finally { _lifecycleGate.Release(); }
     }
 
-    public Task ResumeAsync()
+    public async Task ResumeAsync()
     {
-        if (_initialized && _isSuspended)
+        await _lifecycleGate.WaitAsync();
+        try
         {
-            _view.CoreWebView2.Resume();
-            _isSuspended = false;
+            if (_initialized && _isSuspended)
+            {
+                _view.CoreWebView2.Resume();
+                _isSuspended = false;
+            }
         }
-        return Task.CompletedTask;
+        finally { _lifecycleGate.Release(); }
     }
 
     public Task StopAsync()
@@ -311,36 +322,46 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         NavigationFinished?.Invoke(this, e.IsSuccess);
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        if (_view.CoreWebView2 is { } core)
+        await _lifecycleGate.WaitAsync();
+        try
         {
-            core.DocumentTitleChanged -= OnDocumentTitleChanged;
-            core.SourceChanged -= OnSourceChanged;
-            core.NavigationStarting -= OnNavigationStarting;
-            core.NavigationCompleted -= OnNavigationCompleted;
-            core.DownloadStarting -= OnDownloadStarting;
-            core.PermissionRequested -= OnPermissionRequested;
-            if (_resourceFilterAdded)
+            if (_view.CoreWebView2 is { } core)
             {
-                core.WebResourceRequested -= OnWebResourceRequested;
-                core.RemoveWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All);
-                _resourceFilterAdded = false;
+                core.DocumentTitleChanged -= OnDocumentTitleChanged;
+                core.SourceChanged -= OnSourceChanged;
+                core.NavigationStarting -= OnNavigationStarting;
+                core.NavigationCompleted -= OnNavigationCompleted;
+                core.DownloadStarting -= OnDownloadStarting;
+                core.PermissionRequested -= OnPermissionRequested;
+                if (_resourceFilterAdded)
+                {
+                    core.WebResourceRequested -= OnWebResourceRequested;
+                    core.RemoveWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All,
+                        CoreWebView2WebResourceRequestSourceKinds.Document);
+                    _resourceFilterAdded = false;
+                }
+                core.Stop();
             }
-            core.Stop();
-        }
 
-        TitleChanged = null;
-        AddressChanged = null;
-        LoadingChanged = null;
-        NavigationFinished = null;
-        DownloadRequested = null;
-        PermissionRequested = null;
-        ((IDisposable)_view).Dispose();
-        if (_environmentKey is not null && _environmentEntry is not null)
-            ReleaseEnvironment(_environmentKey, _environmentEntry);
-        _environmentKey = null;
-        _environmentEntry = null;
-        return ValueTask.CompletedTask;
+            TitleChanged = null;
+            AddressChanged = null;
+            LoadingChanged = null;
+            NavigationFinished = null;
+            DownloadRequested = null;
+            PermissionRequested = null;
+            ((IDisposable)_view).Dispose();
+            if (_environmentKey is not null && _environmentEntry is not null)
+                ReleaseEnvironment(_environmentKey, _environmentEntry);
+            _environmentKey = null;
+            _environmentEntry = null;
+        }
+        finally
+        {
+            _lifecycleGate.Release();
+            _lifecycleGate.Dispose();
+        }
     }
+}
 }
