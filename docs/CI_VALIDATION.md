@@ -1,5 +1,5 @@
-# Windows CI validation
+# Final Windows CI validation
 
-This pull request validates the current source after fixing the non-web address parsing regression found by the previous Windows test run.
+This validation includes the current profile management implementation (create, open, rename, delete) and its automated tests, in addition to the existing browser, workspace, privacy, reader, CSS, and packaging code.
 
-The workflow must complete the Release build, all xUnit tests, self-contained win-x64 publish, portable ZIP generation, and Inno Setup installer compilation.
+A green run is required for Release compilation, xUnit tests, self-contained x64 publish, portable ZIP creation, and Inno Setup compilation. It does not replace hands-on Windows testing of browser behavior and security.
