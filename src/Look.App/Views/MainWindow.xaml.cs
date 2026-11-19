@@ -171,11 +171,15 @@ public partial class MainWindow : Window
             };
             request.Complete(dialog.FileName);
         };
-        if (!_isPrivate) engine.NavigationFinished += async (_, success) =>
+        engine.NavigationFinished += async (_, success) =>
         {
-            if (!success || string.IsNullOrWhiteSpace(tab.Address)) return;
-            try { await _dataStore.AddHistoryAsync(tab.Title, tab.Address); }
-            catch (IOException) { if (_active?.Id == tab.Id) StatusText.Text = "History could not be saved"; }
+            if (success && !_isPrivate && !string.IsNullOrWhiteSpace(tab.Address))
+            {
+                try { await _dataStore.AddHistoryAsync(tab.Title, tab.Address); }
+                catch (IOException) { if (_active?.Id == tab.Id) StatusText.Text = "History could not be saved"; }
+            }
+            if (_active?.Id != tab.Id)
+                await engine.TrySuspendAsync();
         };
 
         var initialization = InitializeEngineAsync(engine, tab);
@@ -223,11 +227,7 @@ public partial class MainWindow : Window
                 return;
 
             await engine.NavigateAsync(uri);
-            if (_active?.Id != tab.Id)
-            {
-                await engine.TrySuspendAsync();
-                return;
-            }
+            if (_active?.Id != tab.Id) return;
 
             BrowserHost.Children.Clear();
             BrowserHost.Children.Add(engine.View);
