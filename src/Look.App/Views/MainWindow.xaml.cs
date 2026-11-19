@@ -87,6 +87,31 @@ public partial class MainWindow : Window
         }
     }
 
+    private void WindowTitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left) return;
+        if (e.ClickCount == 2)
+        {
+            MaximizeRestore_Click(this, new RoutedEventArgs());
+            return;
+        }
+        try { DragMove(); } catch (InvalidOperationException) { }
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState.Minimized;
+
+    private void MaximizeRestore_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    private void CloseWindow_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Search_Click(object sender, RoutedEventArgs e) =>
+        _ = NavigateAsync(AddressBox.Text);
+
+    private void SearchWelcome_Click(object sender, RoutedEventArgs e) =>
+        _ = NavigateAsync(WelcomeAddress.Text);
+
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         _restoring = true;
@@ -337,6 +362,12 @@ public partial class MainWindow : Window
 
         var engine = _engineFactory.Create();
         _engines.Add(tab.Id, engine);
+
+        // Attach the WPF WebView2 control to the visual tree before EnsureCoreWebView2Async.
+        // Initializing an unattached control can leave the first navigation blank on some machines.
+        if (_active?.Id == tab.Id || _splitTab?.Id == tab.Id)
+            RenderBrowserHost();
+
         engine.TitleChanged += (_, title) => tab.Title = title;
         engine.AddressChanged += (_, uri) =>
         {
@@ -491,9 +522,11 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Could not open page";
-            MessageBox.Show($"look could not start this page.\n\n{ex.Message}\n\nIf the WebView2 Runtime is missing, install the Microsoft Edge WebView2 Evergreen Runtime.",
-                "look", MessageBoxButton.OK, MessageBoxImage.Warning);
+            StatusText.Text = "Page could not be opened";
+            BrowserHost.Visibility = Visibility.Collapsed;
+            WelcomePanel.Visibility = Visibility.Visible;
+            MessageBox.Show($"look could not open this page.\n\n{ex.Message}\n\nCheck your internet connection and confirm that the Microsoft Edge WebView2 Runtime is installed.",
+                "look — navigation error", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
