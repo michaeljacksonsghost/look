@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
+using System.Diagnostics;
 using Look.Models;
 using Look.Services;
 
@@ -99,6 +100,37 @@ public partial class MainWindow : Window
         {
             tab.IsLoading = loading;
             if (_active?.Id == tab.Id) StatusText.Text = loading ? "Loading…" : "Ready";
+        };
+        engine.DownloadRequested += (_, request) =>
+        {
+            var downloadsFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            downloadsFolder = Path.Combine(downloadsFolder, "Downloads");
+            Directory.CreateDirectory(downloadsFolder);
+            var dialog = new SaveFileDialog
+            {
+                FileName = request.SuggestedFileName,
+                InitialDirectory = downloadsFolder,
+                Title = "Save download"
+            };
+            if (dialog.ShowDialog(this) != true)
+            {
+                request.Complete(null);
+                return;
+            }
+
+            request.Finished += async (_, success) =>
+            {
+                try
+                {
+                    await _dataStore.AddDownloadAsync(new BrowserDownloadEntry(
+                        Guid.NewGuid(), request.SuggestedFileName, request.SourceUri,
+                        dialog.FileName, success, DateTimeOffset.UtcNow));
+                    if (_active?.Id == tab.Id)
+                        StatusText.Text = success ? "Download completed" : "Download interrupted";
+                }
+                catch (IOException) { if (_active?.Id == tab.Id) StatusText.Text = "Download record could not be saved"; }
+            };
+            request.Complete(dialog.FileName);
         };
         engine.NavigationFinished += async (_, success) =>
         {
@@ -348,6 +380,22 @@ public partial class MainWindow : Window
         }
         menu.Items.Add(extensionsMenu);
 
+        var downloadsMenu = new MenuItem { Header = "Downloads" };
+        foreach (var download in await _dataStore.GetDownloadsAsync(20))
+        {
+            var downloadItem = new MenuItem
+            {
+                Header = $"{download.FileName} ({(download.IsComplete ? "complete" : "interrupted")})",
+                Tag = download.DestinationPath,
+                ToolTip = download.DestinationPath
+            };
+            downloadItem.Click += OpenDownload_Click;
+            downloadsMenu.Items.Add(downloadItem);
+        }
+        if (downloadsMenu.Items.Count == 0)
+            downloadsMenu.Items.Add(new MenuItem { Header = "No downloads yet", IsEnabled = false });
+        menu.Items.Add(downloadsMenu);
+
         var history = new MenuItem { Header = "Recent history" };
         foreach (var entry in await _dataStore.GetHistoryAsync(20))
         {
@@ -406,6 +454,21 @@ public partial class MainWindow : Window
         {
             MessageBox.Show($"Could not remove the extension.\n\n{ex.Message}",
                 "Extensions", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OpenDownload_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as MenuItem)?.Tag is not string path || !File.Exists(path))
+        {
+            StatusText.Text = "That downloaded file is no longer available";
+            return;
+        }
+        try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"The file could not be opened.\n\n{ex.Message}",
+                "Downloads", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
