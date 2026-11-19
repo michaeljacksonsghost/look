@@ -15,7 +15,7 @@ public partial class MainWindow : Window
     private readonly Dictionary<Guid, IBrowserEngine> _engines = new();
     private readonly BrowserDataStore _dataStore = new();
     private readonly string _profileFolder = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "look", "WebView2");
+        Look.AppPaths.DataRoot, "WebView2");
     private BrowserTab? _active;
     private bool _restoring;
     private Point _tabDragStart;
