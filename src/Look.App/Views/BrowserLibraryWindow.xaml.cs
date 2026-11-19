@@ -91,7 +91,7 @@ public partial class BrowserLibraryWindow : Window
         }
 
         _openAddress(item.Address);
-        Activate();
+        Owner?.Activate();
     }
 
     private async void RemoveEntry_Click(object sender, RoutedEventArgs e)
