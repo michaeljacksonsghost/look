@@ -152,7 +152,7 @@
             <Grid x:Name="WelcomePanel">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="500">
                     <TextBlock Text="A CLEARER KIND OF BROWSING" FontSize="9" FontWeight="Bold"
-                               CharacterSpacing="180" Foreground="{StaticResource AccentBrush}"
+                               Foreground="{StaticResource AccentBrush}"
                                HorizontalAlignment="Center" Margin="0,0,0,22"/>
                     <TextBlock Text="the web, with room to think." FontSize="36" FontWeight="Light"
                                Foreground="#30342D" HorizontalAlignment="Center" TextAlignment="Center"
@@ -176,7 +176,7 @@
                     </Border>
                     <TextBlock Text="SEARCH THE WEB  ·  OR ENTER A WEBSITE ADDRESS" FontSize="9"
                                Foreground="{StaticResource MutedBrush}" Margin="0,13,0,0"
-                               HorizontalAlignment="Center" CharacterSpacing="80"/>
+                               HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
             <Grid x:Name="BrowserHost" Visibility="Collapsed"/>
