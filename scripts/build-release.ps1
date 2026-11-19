@@ -26,17 +26,17 @@ try {
     $launcher = @(
         "@echo off",
         "set RUNTIME={F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",
-        "reg query ""HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients\%RUNTIME%"" /v pv >nul 2>&1",
+        'reg query "HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients\%RUNTIME%" /v pv >nul 2>&1',
         "if not errorlevel 1 goto launch",
-        "reg query ""HKLM\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\%RUNTIME%"" /v pv >nul 2>&1",
+        'reg query "HKLM\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\%RUNTIME%" /v pv >nul 2>&1',
         "if not errorlevel 1 goto launch",
-        "reg query ""HKCU\Software\Microsoft\EdgeUpdate\Clients\%RUNTIME%"" /v pv >nul 2>&1",
+        'reg query "HKCU\Software\Microsoft\EdgeUpdate\Clients\%RUNTIME%" /v pv >nul 2>&1',
         "if not errorlevel 1 goto launch",
         "echo Installing the Microsoft Edge WebView2 Runtime required by look...",
-        """%~dp0MicrosoftEdgeWebview2Setup.exe"" /install",
+        '"%~dp0MicrosoftEdgeWebview2Setup.exe" /install',
         "if errorlevel 1 (echo Runtime installation failed. & pause & exit /b 1)",
         ":launch",
-        "start """" ""%~dp0look.exe"" --portable"
+        'start "" "%~dp0look.exe" --portable'
     ) -join [Environment]::NewLine
     Set-Content -Path (Join-Path $publish "look-portable.cmd") -Value $launcher -Encoding ASCII
 
