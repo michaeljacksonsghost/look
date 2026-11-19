@@ -1,3 +1,4 @@
+using System.IO;
 using Look.Models;
 using Look.Services;
 using Xunit;
