@@ -18,7 +18,11 @@ public partial class BrowserTab : ObservableObject
     [ObservableProperty]
     private bool isLoading;
 
+    [ObservableProperty]
+    private bool isMuted;
+
     public string DisplayTitle => string.IsNullOrWhiteSpace(Title) ? "New tab" : Title;
 
     partial void OnTitleChanged(string value) => OnPropertyChanged(nameof(DisplayTitle));
+    partial void OnIsPinnedChanged(bool value) => OnPropertyChanged(nameof(DisplayTitle));
 }
