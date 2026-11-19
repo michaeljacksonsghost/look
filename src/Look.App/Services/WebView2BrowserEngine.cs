@@ -39,6 +39,8 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     private bool _initialized;
     private bool _isSuspended;
     private string? _readerSourceUri;
+    private string? _customCssScriptId;
+    private string? _customCssDomain;
 
     public FrameworkElement View => _view;
     public bool IsMuted
@@ -231,6 +233,29 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         _view.CoreWebView2.NavigateToString(html.ToString());
     }
 
+    public async Task SetCustomCssAsync(string domain, string css)
+    {
+        EnsureInitialized();
+        var core = _view.CoreWebView2;
+        if (_customCssScriptId is not null)
+        {
+            await core.RemoveScriptToExecuteOnDocumentCreatedAsync(_customCssScriptId);
+            _customCssScriptId = null;
+        }
+        _customCssDomain = null;
+        await core.ExecuteScriptAsync("document.getElementById('look-custom-css')?.remove();");
+        if (string.IsNullOrWhiteSpace(css)) return;
+
+        var normalizedDomain = domain.Trim().TrimStart('.').ToLowerInvariant();
+        var domainJson = JsonSerializer.Serialize(normalizedDomain);
+        var cssJson = JsonSerializer.Serialize(css);
+        var script = $"(() => {{ const d = {domainJson}; const h = location.hostname.toLowerCase(); if (h !== d && !h.endsWith('.' + d)) return; let s = document.getElementById('look-custom-css'); if (!s) {{ s = document.createElement('style'); s.id = 'look-custom-css'; (document.head || document.documentElement).appendChild(s); }} s.textContent = {cssJson}; }})();";
+
+        _customCssScriptId = await core.AddScriptToExecuteOnDocumentCreatedAsync(script);
+        _customCssDomain = normalizedDomain;
+        await core.ExecuteScriptAsync(script);
+    }
+
     public Task ConfigureContentBlockingAsync(BrowserSettings settings)
     {
         EnsureInitialized();
@@ -399,6 +424,8 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
                         CoreWebView2WebResourceRequestSourceKinds.Document);
                     _resourceFilterAdded = false;
                 }
+                if (_customCssScriptId is not null)
+                    await core.RemoveScriptToExecuteOnDocumentCreatedAsync(_customCssScriptId);
                 core.Stop();
             }
 
@@ -409,6 +436,8 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             DownloadRequested = null;
             PermissionRequested = null;
             _readerSourceUri = null;
+            _customCssScriptId = null;
+            _customCssDomain = null;
             ((IDisposable)_view).Dispose();
             if (_environmentKey is not null && _environmentEntry is not null)
                 ReleaseEnvironment(_environmentKey, _environmentEntry);
