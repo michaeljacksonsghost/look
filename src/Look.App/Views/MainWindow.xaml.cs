@@ -90,7 +90,6 @@ public partial class MainWindow : Window
         var tab = new BrowserTab();
         _tabs.Add(tab);
         SelectTab(tab);
-        _ = SaveSessionQuietlyAsync();
     }
 
     private void SelectTab(BrowserTab tab)
