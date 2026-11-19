@@ -133,8 +133,12 @@ public partial class MainWindow : Window
     {
         if (tab.SpaceId != _activeSpaceId)
         {
-            if (_splitTab is not null) _splitTab.IsSplit = false;
-            _splitTab = null;
+            if (_splitTab is not null)
+            {
+                _splitTab.IsSplit = false;
+                if (_engines.TryGetValue(_splitTab.Id, out var oldSplitEngine)) _ = oldSplitEngine.TrySuspendAsync();
+                _splitTab = null;
+            }
             _activeSpaceId = tab.SpaceId;
             SpaceSelector.SelectedValue = _activeSpaceId;
             _tabView.Refresh();
@@ -452,6 +456,12 @@ public partial class MainWindow : Window
 
         var previous = _active;
         if (previous is not null) previous.IsActive = false;
+        if (_splitTab is not null)
+        {
+            _splitTab.IsSplit = false;
+            if (_engines.TryGetValue(_splitTab.Id, out var splitEngine)) _ = splitEngine.TrySuspendAsync();
+            _splitTab = null;
+        }
         BrowserHost.Children.Clear();
         BrowserHost.Visibility = Visibility.Collapsed;
         if (previous is not null && _engines.TryGetValue(previous.Id, out var previousEngine))
@@ -551,6 +561,11 @@ public partial class MainWindow : Window
         if ((sender as MenuItem)?.Tag is not ValueTuple<BrowserTab, string> move) return;
         var tab = move.Item1;
         var wasActive = _active?.Id == tab.Id;
+        if (_splitTab?.Id == tab.Id)
+        {
+            _splitTab.IsSplit = false;
+            _splitTab = null;
+        }
         if (wasActive)
         {
             tab.IsActive = false;
@@ -620,6 +635,13 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is not BrowserTab tab) return;
         var index = _tabs.Where(item => item.SpaceId == _activeSpaceId).ToList().IndexOf(tab);
         var wasActive = _active?.Id == tab.Id;
+        var wasSplit = _splitTab?.Id == tab.Id;
+        var promotedSplit = wasActive ? _splitTab : null;
+        if (wasSplit || promotedSplit is not null)
+        {
+            if (_splitTab is not null) _splitTab.IsSplit = false;
+            _splitTab = null;
+        }
         if (!_isPrivate && Uri.TryCreate(tab.Address, UriKind.Absolute, out var closedUri) &&
             (closedUri.Scheme == Uri.UriSchemeHttp || closedUri.Scheme == Uri.UriSchemeHttps))
             await _dataStore.AddRecentlyClosedAsync(new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned, tab.SpaceId));
@@ -634,8 +656,11 @@ public partial class MainWindow : Window
         if (_engines.Remove(tab.Id, out var engine)) await engine.DisposeAsync();
         _engineInitializations.Remove(tab.Id);
         var remainingInSpace = _tabs.Where(item => item.SpaceId == _activeSpaceId).ToList();
-        if (remainingInSpace.Count == 0) AddTab();
+        if (wasActive && promotedSplit is not null && _tabs.Contains(promotedSplit))
+            SelectTab(promotedSplit);
+        else if (remainingInSpace.Count == 0) AddTab();
         else if (wasActive) SelectTab(remainingInSpace[Math.Clamp(index - 1, 0, remainingInSpace.Count - 1)]);
+        else if (wasSplit) RenderBrowserHost();
         await SaveSessionAsync();
     }
 
