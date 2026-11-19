@@ -160,7 +160,8 @@ public sealed class BrowserDataStore
         {
             ContentBlockingEnabled = settings.ContentBlockingEnabled,
             BlockedDomains = settings.BlockedDomains.ToList(),
-            AllowedDomains = settings.AllowedDomains.ToList()
+            AllowedDomains = settings.AllowedDomains.ToList(),
+            CustomCssByDomain = new Dictionary<string, string>(settings.CustomCssByDomain, StringComparer.OrdinalIgnoreCase)
         };
     }
 
@@ -169,7 +170,8 @@ public sealed class BrowserDataStore
         {
             ContentBlockingEnabled = settings.ContentBlockingEnabled,
             BlockedDomains = settings.BlockedDomains.Select(NormalizeDomain).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-            AllowedDomains = settings.AllowedDomains.Select(NormalizeDomain).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+            AllowedDomains = settings.AllowedDomains.Select(NormalizeDomain).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+            CustomCssByDomain = settings.CustomCssByDomain.ToDictionary(pair => NormalizeDomain(pair.Key), pair => pair.Value, StringComparer.OrdinalIgnoreCase)
         }, cancellationToken);
 
     public async Task AddBlockedDomainAsync(string domain, CancellationToken cancellationToken = default) =>
@@ -212,6 +214,21 @@ public sealed class BrowserDataStore
             throw new ArgumentException("Enter a valid website domain.", nameof(value));
         return uri.Host.TrimEnd('.').ToLowerInvariant();
     }
+
+    public async Task<string> GetSiteCssAsync(string domain, CancellationToken cancellationToken = default)
+    {
+        var normalized = NormalizeDomain(domain);
+        var settings = await GetSettingsAsync(cancellationToken);
+        return settings.CustomCssByDomain.TryGetValue(normalized, out var css) ? css : string.Empty;
+    }
+
+    public async Task SaveSiteCssAsync(string domain, string css, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data =>
+        {
+            var normalized = NormalizeDomain(domain);
+            if (string.IsNullOrWhiteSpace(css)) data.Settings.CustomCssByDomain.Remove(normalized);
+            else data.Settings.CustomCssByDomain[normalized] = css;
+        }, cancellationToken);
 
     public async Task ClearHistoryAsync(CancellationToken cancellationToken = default) =>
         await MutateAsync(data => data.History.Clear(), cancellationToken);
@@ -259,7 +276,8 @@ public sealed class BrowserDataStore
         {
             ContentBlockingEnabled = data.Settings.ContentBlockingEnabled,
             BlockedDomains = data.Settings.BlockedDomains.ToList(),
-            AllowedDomains = data.Settings.AllowedDomains.ToList()
+            AllowedDomains = data.Settings.AllowedDomains.ToList(),
+            CustomCssByDomain = new Dictionary<string, string>(data.Settings.CustomCssByDomain, StringComparer.OrdinalIgnoreCase)
         }
     };
 }
