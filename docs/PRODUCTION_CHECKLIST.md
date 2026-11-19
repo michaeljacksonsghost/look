@@ -96,6 +96,7 @@ The following capabilities now have initial code paths, but remain unchecked abo
 - Session autosave on tab selection and successful navigation.
 - User-managed domain blocking and allowlist settings.
 - Resizable two-pane split view with pane switching.
+- Text-first reader mode that restores the original URL when exited.
 
 WebView2's documented extension UI limitations mean toolbar action/popup hosting and full extension compatibility are still open requirements.
 
