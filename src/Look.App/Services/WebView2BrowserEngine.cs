@@ -153,14 +153,14 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
 
         if (_contentBlockingEnabled && !_resourceFilterAdded)
         {
-            _view.CoreWebView2.AddWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All);
+            _view.CoreWebView2.AddWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All, CoreWebView2WebResourceRequestSourceKinds.Document);
             _view.CoreWebView2.WebResourceRequested += OnWebResourceRequested;
             _resourceFilterAdded = true;
         }
         else if (!_contentBlockingEnabled && _resourceFilterAdded)
         {
             _view.CoreWebView2.WebResourceRequested -= OnWebResourceRequested;
-            _view.CoreWebView2.RemoveWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All);
+            _view.CoreWebView2.RemoveWebResourceRequestedFilter("*://*/*", CoreWebView2WebResourceContext.All, CoreWebView2WebResourceRequestSourceKinds.Document);
             _resourceFilterAdded = false;
         }
         return Task.CompletedTask;
