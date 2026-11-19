@@ -12,6 +12,7 @@ The current development branch contains:
 - Persistent Spaces: create named workspaces, filter the tab strip by active space, and move tabs between spaces.
 - Named persistent browser profiles, each with its own WebView2 data folder, cookies/storage, bookmarks, history, settings, and extensions.
 - Resizable two-pane split view, with pane swapping by selecting the secondary tab.
+- Searchable tab switcher (Ctrl+Shift+A) across all Spaces.
 - Text-first reader mode with original URL restoration.
 - Per-domain custom CSS editor and click-to-hide element picker; CSS is injected at document creation and applied to matching hostnames.
 - Local JSON persistence for session tabs (autosaved on navigation/tab changes), recently closed tabs, bookmarks, history, and downloads.
@@ -50,7 +51,7 @@ The native Windows GitHub Actions run completed successfully: Release compilatio
 - Tab suspension/resume is implemented in source but not yet runtime-verified; renderer crash recovery is not implemented.
 - Library search and individual bookmark/history/download-record deletion are implemented in source; runtime verification is still pending.
 - Reader mode currently extracts readable text from article/main/body into a clean typography view; images and rich article structure are not preserved, and the original page is reloaded when exiting.
-- 3–4 pane layouts and a dedicated tab switcher are not implemented.
+- 3–4 pane layouts are not implemented.
 - Domain blocking is a simple user-managed host block/allow list, not a maintained ad/tracker filter list; service-worker/shared-worker requests are outside the current document-source filter.
 - Credential vault and persistent permission review/revocation UI are not implemented; current site grants are one-time.
 - Installer and portable packages were generated successfully by Windows CI; artifacts are available from the workflow run. Code signing, updater, rollback, and release checksums remain outstanding.
