@@ -4,7 +4,7 @@
         Title="look" Width="1380" Height="880" MinWidth="760" MinHeight="520"
         Background="{StaticResource CanvasBrush}" Foreground="{StaticResource InkBrush}"
         WindowStartupLocation="CenterScreen" PreviewKeyDown="Window_PreviewKeyDown"
-        Closed="Window_Closed">
+        Closed="Window_Closed" Loaded="Window_Loaded">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="54"/>
@@ -56,6 +56,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <Button Content="‹" Click="Back_Click" Style="{StaticResource QuietButton}" FontSize="21"/>
             <Button Grid.Column="1" Content="›" Click="Forward_Click"
@@ -67,7 +68,8 @@
                          BorderThickness="0" VerticalContentAlignment="Center" Padding="12,0"
                          FontSize="13" KeyDown="AddressBox_KeyDown"/>
             </Border>
-            <Button Grid.Column="4" Content="···" Click="Menu_Click" Style="{StaticResource QuietButton}"/>
+            <Button Grid.Column="4" Content="☆" Click="Bookmark_Click" ToolTip="Add or remove bookmark" Style="{StaticResource QuietButton}" FontSize="17"/>
+            <Button Grid.Column="5" Content="···" Click="Menu_Click" Style="{StaticResource QuietButton}"/>
         </Grid>
 
         <Grid Grid.Row="2">
