@@ -30,7 +30,8 @@
 ## 3 — Search-inspired workspace
 - [x] Add separate temporary profile/data location for private windows (runtime/privacy verification pending).
 - [x] Add named Spaces for tab organization and moving tabs between Spaces (runtime verification pending).
-- [ ] Persistent user profiles with explicit cookie/storage isolation.
+- [x] Named persistent profiles with separate WebView2 data folders and profile-specific browser data (runtime verification pending).
+- [ ] Profile rename/delete/import and cross-process profile locking.
 - [x] Two-pane split view with resizing and pane switching (runtime verification pending).
 - [ ] Extend split layout to three and four panes.
 - [x] Add text-first reader mode and clean reading typography (runtime verification pending).
