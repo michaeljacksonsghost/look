@@ -67,22 +67,50 @@ public partial class MainWindow : Window
         try
         {
             var data = await _dataStore.LoadAsync();
+            _spaces.Clear();
+            foreach (var space in data.Spaces ?? [])
+                _spaces.Add(space);
+            if (_spaces.Count == 0)
+                _spaces.Add(new BrowserSpace("default", "Default", DateTimeOffset.UtcNow));
+
+            _activeSpaceId = _spaces.Any(space => space.Id == data.ActiveSpaceId)
+                ? data.ActiveSpaceId
+                : _spaces[0].Id;
+            SpaceSelector.SelectedValue = _activeSpaceId;
+
             foreach (var saved in data.SessionTabs)
             {
+                var spaceId = _spaces.Any(space => space.Id == saved.SpaceId) ? saved.SpaceId : _spaces[0].Id;
                 _tabs.Add(new BrowserTab
                 {
                     Address = saved.Address,
                     Title = string.IsNullOrWhiteSpace(saved.Title) ? "New tab" : saved.Title,
-                    IsPinned = saved.IsPinned
+                    IsPinned = saved.IsPinned,
+                    SpaceId = spaceId
                 });
             }
+            _tabView.Refresh();
 
-            if (_tabs.Count == 0) AddTab();
-            else SelectTab(_tabs[Math.Clamp(data.ActiveTabIndex, 0, _tabs.Count - 1)]);
+            var currentSpaceTabs = _tabs.Where(tab => tab.SpaceId == _activeSpaceId).ToList();
+            if (currentSpaceTabs.Count == 0)
+                AddTab();
+            else
+            {
+                var desired = data.ActiveTabIndex >= 0 && data.ActiveTabIndex < _tabs.Count
+                    ? _tabs[data.ActiveTabIndex]
+                    : currentSpaceTabs[0];
+                SelectTab(desired.SpaceId == _activeSpaceId ? desired : currentSpaceTabs[0]);
+            }
         }
         catch (Exception ex)
         {
             StatusText.Text = "Session could not be restored";
+            if (_spaces.Count == 0)
+            {
+                _spaces.Add(new BrowserSpace("default", "Default", DateTimeOffset.UtcNow));
+                _activeSpaceId = "default";
+                SpaceSelector.SelectedValue = _activeSpaceId;
+            }
             AddTab();
             MessageBox.Show($"look could not restore the previous session.\n\n{ex.Message}",
                 "look", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -92,13 +120,19 @@ public partial class MainWindow : Window
 
     private void AddTab()
     {
-        var tab = new BrowserTab();
+        var tab = new BrowserTab { SpaceId = _activeSpaceId };
         _tabs.Add(tab);
         SelectTab(tab);
     }
 
     private void SelectTab(BrowserTab tab)
     {
+        if (tab.SpaceId != _activeSpaceId)
+        {
+            _activeSpaceId = tab.SpaceId;
+            SpaceSelector.SelectedValue = _activeSpaceId;
+            _tabView.Refresh();
+        }
         var previous = _active;
         if (previous is not null) previous.IsActive = false;
         BrowserHost.Children.Clear();
@@ -335,7 +369,7 @@ public partial class MainWindow : Window
         var wasActive = _active?.Id == tab.Id;
         if (!_isPrivate && Uri.TryCreate(tab.Address, UriKind.Absolute, out var closedUri) &&
             (closedUri.Scheme == Uri.UriSchemeHttp || closedUri.Scheme == Uri.UriSchemeHttps))
-            await _dataStore.AddRecentlyClosedAsync(new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned));
+            await _dataStore.AddRecentlyClosedAsync(new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned, tab.SpaceId));
         if (wasActive) { BrowserHost.Children.Clear(); BrowserHost.Visibility = Visibility.Collapsed; }
         _navigationVersions.Remove(tab.Id);
         _tabs.Remove(tab);
@@ -346,8 +380,9 @@ public partial class MainWindow : Window
         }
         if (_engines.Remove(tab.Id, out var engine)) await engine.DisposeAsync();
         _engineInitializations.Remove(tab.Id);
-        if (_tabs.Count == 0) AddTab();
-        else if (wasActive) SelectTab(_tabs[Math.Clamp(index - 1, 0, _tabs.Count - 1)]);
+        var remainingInSpace = _tabs.Where(item => item.SpaceId == _activeSpaceId).ToList();
+        if (remainingInSpace.Count == 0) AddTab();
+        else if (wasActive) SelectTab(remainingInSpace[Math.Clamp(index - 1, 0, remainingInSpace.Count - 1)]);
         await SaveSessionAsync();
     }
 
@@ -375,7 +410,8 @@ public partial class MainWindow : Window
             Address = tab.Address,
             Title = tab.Title,
             IsPinned = false,
-            IsMuted = tab.IsMuted
+            IsMuted = tab.IsMuted,
+            SpaceId = tab.SpaceId
         };
         _tabs.Add(duplicate);
         SelectTab(duplicate);
@@ -729,7 +765,13 @@ public partial class MainWindow : Window
             : recentlyClosed.FirstOrDefault(item => item.Address == targetAddress);
         if (saved is null) return;
         await _dataStore.RemoveRecentlyClosedAsync(saved.Address);
-        var tab = new BrowserTab { Address = saved.Address, Title = saved.Title, IsPinned = saved.IsPinned };
+        if (_spaces.Any(space => space.Id == saved.SpaceId))
+        {
+            _activeSpaceId = saved.SpaceId;
+            SpaceSelector.SelectedValue = _activeSpaceId;
+            _tabView.Refresh();
+        }
+        var tab = new BrowserTab { Address = saved.Address, Title = saved.Title, IsPinned = saved.IsPinned, SpaceId = saved.SpaceId };
         _tabs.Add(tab);
         SelectTab(tab);
         StatusText.Text = "Tab restored";
@@ -744,9 +786,9 @@ public partial class MainWindow : Window
     private async Task SaveSessionAsync()
     {
         if (_restoring || _isPrivate) return;
-        var snapshots = _tabs.Select(tab => new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned)).ToList();
+        var snapshots = _tabs.Select(tab => new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned, tab.SpaceId)).ToList();
         var activeIndex = _active is null ? 0 : Math.Max(0, _tabs.IndexOf(_active));
-        await _dataStore.SaveSessionAsync(snapshots, activeIndex);
+        await _dataStore.SaveSessionAsync(snapshots, activeIndex, _spaces.ToList(), _activeSpaceId);
     }
 
     private async void Stop_Click(object sender, RoutedEventArgs e)
