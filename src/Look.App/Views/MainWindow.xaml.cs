@@ -87,6 +87,31 @@ public partial class MainWindow : Window
         }
     }
 
+    private void WindowTitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left) return;
+        if (e.ClickCount == 2)
+        {
+            MaximizeRestore_Click(this, new RoutedEventArgs());
+            return;
+        }
+        try { DragMove(); } catch (InvalidOperationException) { }
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState.Minimized;
+
+    private void MaximizeRestore_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    private void CloseWindow_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Search_Click(object sender, RoutedEventArgs e) =>
+        _ = NavigateAsync(AddressBox.Text);
+
+    private void SearchWelcome_Click(object sender, RoutedEventArgs e) =>
+        _ = NavigateAsync(WelcomeAddress.Text);
+
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         _restoring = true;
