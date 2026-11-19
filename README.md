@@ -23,6 +23,8 @@ dotnet run --project .\src\Look.App\Look.App.csproj
 - Local session restore, recently closed tabs, bookmarks, history, and downloads.
 - Basic unpacked-extension install/list/enable/disable/remove.
 - User-managed domain blocking and allowlist exceptions.
+- Per-request site permission prompts and executable-download warnings.
+- Background tab suspend/resume and crash-stale private-profile cleanup.
 - Separate temporary browser profile for private windows.
 - Portable-mode data folder and Windows installer/portable packaging scripts.
 
@@ -51,7 +53,7 @@ See [release instructions](docs/RELEASING.md).
 - Local-first; no account, ads, analytics, or telemetry by default.
 - Credentials must use Windows Credential Manager / DPAPI, never plaintext.
 - No automatic password filling.
-- Private windows use a separate temporary profile and remove their data folder on normal close; crash recovery and forensic privacy review are still required.
+- Private windows use a separate temporary profile, remove their data folder on normal close, and clean abandoned folders on the next startup; forensic privacy review is still required.
 - Installer and portable builds are planned through the release script but have not yet been built and verified.
 
 ## Project documents
