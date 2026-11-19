@@ -561,9 +561,10 @@ public partial class MainWindow : Window
         if ((sender as MenuItem)?.Tag is not ValueTuple<BrowserTab, string> move) return;
         var tab = move.Item1;
         var wasActive = _active?.Id == tab.Id;
-        if (_splitTab?.Id == tab.Id)
+        var wasSplit = _splitTab?.Id == tab.Id;
+        if (wasSplit)
         {
-            _splitTab.IsSplit = false;
+            _splitTab!.IsSplit = false;
             _splitTab = null;
         }
         if (wasActive)
@@ -584,6 +585,7 @@ public partial class MainWindow : Window
             if (next is not null) SelectTab(next);
             else AddTab();
         }
+        else if (wasSplit) RenderBrowserHost();
         await SaveSessionAsync();
     }
 
