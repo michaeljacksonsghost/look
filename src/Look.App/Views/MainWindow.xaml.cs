@@ -152,6 +152,19 @@ public partial class MainWindow : Window
         };
         engine.DownloadRequested += (_, request) =>
         {
+            var extension = Path.GetExtension(request.SuggestedFileName).ToLowerInvariant();
+            var riskyExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".exe", ".msi", ".bat", ".cmd", ".ps1", ".scr", ".com", ".reg", ".vbs", ".js", ".jar", ".lnk"
+            };
+            if (riskyExtensions.Contains(extension) &&
+                MessageBox.Show($"This file type ({extension}) can run code or change your system. Only save it if you trust the source. Continue?",
+                    "Potentially unsafe download", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            {
+                request.Complete(null);
+                return;
+            }
+
             var downloadsFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             Directory.CreateDirectory(downloadsFolder);
