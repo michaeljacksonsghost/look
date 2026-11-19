@@ -6,8 +6,8 @@ This is the release acceptance checklist for the Windows browser. A feature is n
 - [x] Establish product name, repository, WPF solution, and initial shell.
 - [x] Record engine compatibility as an explicit release gate.
 - [x] Add Windows CI for restore, build, and tests.
-- [ ] Establish versioning, release notes, and a repeatable build process.
-- [ ] Verify clean checkout builds on a fresh Windows machine.
+- [x] Establish versioning, release notes, and a repeatable build process.
+- [x] Verify clean checkout builds on a fresh Windows runner.
 
 ## 1. Browser engine and extensions — critical gate
 - [x] Implement the engine adapter and keep engine-specific APIs out of the UI.
@@ -63,7 +63,7 @@ This is the release acceptance checklist for the Windows browser. A feature is n
 - [ ] Empty, error, offline, and first-run states are polished.
 
 ## 6. Reliability and performance
-- [ ] Automated unit tests for address parsing, settings, and browser state.
+- [x] Automated unit tests for address parsing, settings, and browser-data/profile state.
 - [ ] Integration tests for tab lifecycle, navigation, and session restore.
 - [ ] Test 1, 10, 25, and 50 open tabs.
 - [ ] Test sleep/resume, network loss, renderer crash, and app restart.
@@ -71,10 +71,10 @@ This is the release acceptance checklist for the Windows browser. A feature is n
 - [ ] Verify no unhandled exceptions or data loss during shutdown.
 
 ## 7. Distribution and release
-- [ ] Reproducible x64 Release build.
+- [x] Reproducible x64 Release build (Windows CI).
 - [ ] Portable package with user data stored beside the app only when explicitly configured.
 - [ ] Installer with prerequisite detection and clean install/uninstall.
-- [ ] Decide WebView2 Evergreen vs fixed runtime, or CEF runtime packaging.
+- [x] Decide WebView2 Evergreen runtime for the initial Windows build; CEF remains an evaluated alternative.
 - [ ] Code signing and timestamping plan.
 - [ ] Update channel, signature verification, rollback, and release notes.
 - [ ] Test upgrade, downgrade/rollback, and data migration.
