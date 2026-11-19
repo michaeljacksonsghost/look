@@ -13,6 +13,8 @@ public partial class MainWindow : Window
 {
     private readonly ObservableCollection<BrowserTab> _tabs = new();
     private readonly Dictionary<Guid, IBrowserEngine> _engines = new();
+    private readonly Dictionary<Guid, Task> _engineInitializations = new();
+    private readonly Dictionary<Guid, int> _navigationVersions = new();
     private readonly IBrowserEngineFactory _engineFactory;
     private readonly BrowserDataStore _dataStore;
     private readonly string _profileFolder;
@@ -112,7 +114,12 @@ public partial class MainWindow : Window
 
     private async Task<IBrowserEngine> GetOrCreateEngineAsync(BrowserTab tab)
     {
-        if (_engines.TryGetValue(tab.Id, out var existing)) return existing;
+        if (_engines.TryGetValue(tab.Id, out var existing))
+        {
+            if (_engineInitializations.TryGetValue(tab.Id, out var pending))
+                await pending;
+            return existing;
+        }
 
         var engine = _engineFactory.Create();
         _engines.Add(tab.Id, engine);
@@ -129,8 +136,8 @@ public partial class MainWindow : Window
         };
         engine.DownloadRequested += (_, request) =>
         {
-            var downloadsFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            downloadsFolder = Path.Combine(downloadsFolder, "Downloads");
+            var downloadsFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             Directory.CreateDirectory(downloadsFolder);
             var dialog = new SaveFileDialog
             {
@@ -165,11 +172,11 @@ public partial class MainWindow : Window
             catch (IOException) { if (_active?.Id == tab.Id) StatusText.Text = "History could not be saved"; }
         };
 
+        var initialization = InitializeEngineAsync(engine, tab);
+        _engineInitializations[tab.Id] = initialization;
         try
         {
-            await engine.InitializeAsync(_profileFolder);
-            engine.IsMuted = tab.IsMuted;
-            await engine.ConfigureContentBlockingAsync(await _dataStore.GetSettingsAsync());
+            await initialization;
             return engine;
         }
         catch
@@ -178,6 +185,17 @@ public partial class MainWindow : Window
             await engine.DisposeAsync();
             throw;
         }
+        finally
+        {
+            _engineInitializations.Remove(tab.Id);
+        }
+    }
+
+    private async Task InitializeEngineAsync(IBrowserEngine engine, BrowserTab tab)
+    {
+        await engine.InitializeAsync(_profileFolder);
+        engine.IsMuted = tab.IsMuted;
+        await engine.ConfigureContentBlockingAsync(await _dataStore.GetSettingsAsync());
     }
 
     private async Task NavigateAsync(string input)
@@ -192,18 +210,23 @@ public partial class MainWindow : Window
             WelcomePanel.Visibility = Visibility.Collapsed;
             StatusText.Text = "Starting tab…";
 
+            var version = _navigationVersions.TryGetValue(tab.Id, out var currentVersion) ? currentVersion + 1 : 1;
+            _navigationVersions[tab.Id] = version;
             var engine = await GetOrCreateEngineAsync(tab);
+            if (!_navigationVersions.TryGetValue(tab.Id, out var latestVersion) || latestVersion != version)
+                return;
+
+            await engine.NavigateAsync(uri);
             if (_active?.Id != tab.Id) return;
 
             BrowserHost.Children.Clear();
             BrowserHost.Children.Add(engine.View);
             BrowserHost.Visibility = Visibility.Visible;
-            await engine.NavigateAsync(uri);
         }
         catch (Exception ex)
         {
             StatusText.Text = "Could not open page";
-            MessageBox.Show($"look could not start this page.\n\n{ex.Message}",
+            MessageBox.Show($"look could not start this page.\n\n{ex.Message}\n\nIf the WebView2 Runtime is missing, install the Microsoft Edge WebView2 Evergreen Runtime.",
                 "look", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
