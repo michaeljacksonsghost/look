@@ -25,7 +25,7 @@ public sealed class BrowserProfileStore
         if (normalizedName.Length is < 1 or > 32)
             throw new ArgumentException("Profile names must be between 1 and 32 characters.", nameof(name));
 
-        await _gate.WaitAsync(cancellationToken);
+        await GlobalGate.WaitAsync(cancellationToken);
         try
         {
             var profiles = (await LoadAsync(cancellationToken)).ToList();
@@ -37,7 +37,7 @@ public sealed class BrowserProfileStore
             await SaveAsync(profiles, cancellationToken);
             return profile;
         }
-        finally { _gate.Release(); }
+        finally { GlobalGate.Release(); }
     }
 
     private async Task<List<BrowserProfileInfo>> LoadAsync(CancellationToken cancellationToken)
