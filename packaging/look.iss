@@ -45,10 +45,10 @@ var
   Version: string;
   RuntimeGuid: string;
 begin
-  RuntimeGuid := "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}";
+  RuntimeGuid := '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';
   Result :=
-    (RegQueryStringValue(HKLM32, "SOFTWARE\Microsoft\EdgeUpdate\Clients\" + RuntimeGuid, "pv", Version) and
-      (Version <> "") and (Version <> "0.0.0.0")) or
-    (RegQueryStringValue(HKCU, "Software\Microsoft\EdgeUpdate\Clients\" + RuntimeGuid, "pv", Version) and
-      (Version <> "") and (Version <> "0.0.0.0"));
+    (RegQueryStringValue(HKLM32, "SOFTWARE\Microsoft\EdgeUpdate\Clients\" + RuntimeGuid, 'pv', Version) and
+      (Version <> ") and (Version <> '0.0.0.0')) or
+    (RegQueryStringValue(HKCU, "Software\Microsoft\EdgeUpdate\Clients\" + RuntimeGuid, 'pv', Version) and
+      (Version <> ") and (Version <> '0.0.0.0'));
 end;
