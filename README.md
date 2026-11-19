@@ -21,6 +21,7 @@ dotnet run --project .\src\Look.App\Look.App.csproj
 - Tab close, duplicate, pin, mute, drag reorder, and keyboard switching.
 - Find-in-page.
 - Local session restore, recently closed tabs, bookmarks, history, and downloads.
+- Searchable Library window with individual item deletion.
 - Basic unpacked-extension install/list/enable/disable/remove.
 - User-managed domain blocking and allowlist exceptions.
 - Per-request site permission prompts and executable-download warnings.
