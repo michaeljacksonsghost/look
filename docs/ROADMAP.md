@@ -32,7 +32,8 @@
 - [ ] Persistent user profiles with explicit cookie/storage isolation.
 - [ ] Two-to-four-pane split view with resizing and focus switching.
 - [ ] Reader mode and clean reading typography.
-- [ ] Per-site content blocking and exceptions.
+- [x] Add user-managed per-domain blocking and allowlist exceptions (runtime verification pending).
+- [ ] Add maintained ad/tracker filter lists and per-site controls.
 - [ ] Document-start element hiding and custom CSS.
 - [ ] Picture-in-picture and media controls.
 
