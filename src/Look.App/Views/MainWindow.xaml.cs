@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.Win32;
 using Look.Models;
 using Look.Services;
 
@@ -251,6 +252,61 @@ public partial class MainWindow : Window
         if (bookmarks.Items.Count == 0) bookmarks.Items.Add(new MenuItem { Header = "No bookmarks yet", IsEnabled = false });
         menu.Items.Add(bookmarks);
 
+        var extensionsMenu = new MenuItem { Header = "Extensions" };
+        var extensionNote = new MenuItem
+        {
+            Header = "Unpacked extensions only · popup buttons are not hosted yet",
+            IsEnabled = false
+        };
+        extensionsMenu.Items.Add(extensionNote);
+        extensionsMenu.Items.Add(new Separator());
+        var installExtension = new MenuItem { Header = "Install unpacked extension…" };
+        installExtension.Click += async (_, _) =>
+        {
+            if (_active is null || !_engines.TryGetValue(_active.Id, out var activeEngine))
+            {
+                MessageBox.Show("Open a webpage first, then manage extensions from this menu.",
+                    "Extensions", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dialog = new OpenFolderDialog { Title = "Select an unpacked extension folder" };
+            if (dialog.ShowDialog(this) != true) return;
+            try
+            {
+                var installed = await activeEngine.InstallExtensionAsync(dialog.FolderName);
+                StatusText.Text = $"Installed {installed.Name}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"The extension could not be installed.\n\n{ex.Message}",
+                    "Extension installation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        };
+        extensionsMenu.Items.Add(installExtension);
+        if (_active is not null && _engines.TryGetValue(_active.Id, out var extensionEngine))
+        {
+            foreach (var extension in await extensionEngine.GetExtensionsAsync())
+            {
+                var extensionItem = new MenuItem
+                {
+                    Header = $"{extension.Name} ({(extension.IsEnabled ? "enabled" : "disabled")})"
+                };
+                var toggle = new MenuItem
+                {
+                    Header = extension.IsEnabled ? "Disable" : "Enable",
+                    Tag = (extensionEngine, extension)
+                };
+                toggle.Click += ExtensionToggle_Click;
+                var remove = new MenuItem { Header = "Remove", Tag = (extensionEngine, extension) };
+                remove.Click += ExtensionRemove_Click;
+                extensionItem.Items.Add(toggle);
+                extensionItem.Items.Add(remove);
+                extensionsMenu.Items.Add(extensionItem);
+            }
+        }
+        menu.Items.Add(extensionsMenu);
+
         var history = new MenuItem { Header = "Recent history" };
         foreach (var entry in await _dataStore.GetHistoryAsync(20))
         {
@@ -278,6 +334,38 @@ public partial class MainWindow : Window
         quit.Click += (_, _) => Close();
         menu.Items.Add(quit);
         menu.IsOpen = true;
+    }
+
+    private async void ExtensionToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as MenuItem)?.Tag is not ValueTuple<IBrowserEngine, BrowserExtensionInfo> data) return;
+        try
+        {
+            await data.Item1.SetExtensionEnabledAsync(data.Item2.Id, !data.Item2.IsEnabled);
+            StatusText.Text = data.Item2.IsEnabled ? "Extension disabled" : "Extension enabled";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Could not update the extension.\n\n{ex.Message}",
+                "Extensions", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private async void ExtensionRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as MenuItem)?.Tag is not ValueTuple<IBrowserEngine, BrowserExtensionInfo> data) return;
+        if (MessageBox.Show($"Remove {data.Item2.Name} from look?", "Remove extension",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        try
+        {
+            await data.Item1.RemoveExtensionAsync(data.Item2.Id);
+            StatusText.Text = $"Removed {data.Item2.Name}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Could not remove the extension.\n\n{ex.Message}",
+                "Extensions", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void MenuNavigate_Click(object sender, RoutedEventArgs e)
