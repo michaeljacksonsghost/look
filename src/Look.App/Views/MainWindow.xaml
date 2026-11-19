@@ -31,8 +31,17 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#292A27" CornerRadius="8,8,0,0"
+                                <Border Background="#292A27" CornerRadius="8,8,0,0" Tag="{Binding}"
                                         Margin="2,8,2,0" MinWidth="112" MaxWidth="190" Height="38">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Pin / unpin tab" Click="PinTab_Click"/>
+                                            <MenuItem Header="Duplicate tab" Click="DuplicateTab_Click"/>
+                                            <MenuItem Header="Mute / unmute tab" Click="MuteTab_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="Close tab" Click="CloseTabFromMenu_Click"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <DockPanel>
                                         <Button Content="×" Tag="{Binding}" Click="CloseTab_Click"
                                                 Style="{StaticResource QuietButton}" DockPanel.Dock="Right"
