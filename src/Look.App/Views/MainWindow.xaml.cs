@@ -22,6 +22,11 @@ public partial class MainWindow : Window
     private readonly Dictionary<Guid, int> _navigationVersions = new();
     private readonly IBrowserEngineFactory _engineFactory;
     private readonly BrowserDataStore _dataStore;
+    private readonly BrowserProfileStore _profileStore;
+    private readonly BrowserProfileInfo? _profile;
+    private readonly string _profileKey;
+    private static readonly object ProfileWindowsLock = new();
+    private static readonly Dictionary<string, WeakReference<MainWindow>> ProfileWindows = new(StringComparer.OrdinalIgnoreCase);
     private readonly string _profileFolder;
     private readonly bool _isPrivate;
     private readonly string? _privateDataRoot;
@@ -32,10 +37,15 @@ public partial class MainWindow : Window
     private Point _tabDragStart;
     private BrowserTab? _tabDragCandidate;
 
-    public MainWindow(bool isPrivate = false, IBrowserEngineFactory? engineFactory = null)
+    public MainWindow(bool isPrivate = false, IBrowserEngineFactory? engineFactory = null, BrowserProfileInfo? profile = null)
     {
         _engineFactory = engineFactory ?? ((App)Application.Current).BrowserEngineFactory;
         _isPrivate = isPrivate;
+        _profile = profile;
+        _profileStore = new BrowserProfileStore(Path.Combine(Look.AppPaths.DataRoot, "profiles.json"));
+        _profileKey = _profile?.Id ?? "default";
+        if (_profile is not null && !Guid.TryParseExact(_profile.Id, "N", out _))
+            throw new ArgumentException("Invalid profile identifier.", nameof(profile));
         if (_isPrivate)
         {
             _privateDataRoot = Path.Combine(Path.GetTempPath(), "look-private", Guid.NewGuid().ToString("N"));
@@ -48,21 +58,32 @@ public partial class MainWindow : Window
         else
         {
             _privateDataRoot = null;
-            _dataStore = new BrowserDataStore();
-            _profileFolder = Path.Combine(Look.AppPaths.DataRoot, "WebView2");
+            var profileRoot = _profile is null
+                ? Look.AppPaths.DataRoot
+                : Path.Combine(Look.AppPaths.DataRoot, "Profiles", _profile.Id);
+            Directory.CreateDirectory(profileRoot);
+            _dataStore = _profile is null
+                ? new BrowserDataStore()
+                : new BrowserDataStore(Path.Combine(profileRoot, "browser-data.json"));
+            _profileFolder = Path.Combine(profileRoot, "WebView2");
         }
 
         InitializeComponent();
         if (_isPrivate)
         {
-            Title = "look — Private";
-            ModeText.Text = " / private window";
+            Title = _profile is null ? "look — Private" : $"look — Private · {_profile.Name}";
+            ModeText.Text = _profile is null ? " / private window" : $" / private · {_profile.Name}";
             FooterLabel.Text = "LOOK · PRIVATE SESSION";
         }
         _tabView = CollectionViewSource.GetDefaultView(_tabs);
         _tabView.Filter = item => item is BrowserTab tab && tab.SpaceId == _activeSpaceId;
         TabsList.ItemsSource = _tabView;
         SpaceSelector.ItemsSource = _spaces;
+        if (!_isPrivate)
+        {
+            Title = _profile is null ? "look" : $"look — {_profile.Name}";
+            lock (ProfileWindowsLock) ProfileWindows[_profileKey] = new WeakReference<MainWindow>(this);
+        }
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -1281,7 +1302,7 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.N && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
         {
-            new MainWindow(isPrivate: true).Show(); e.Handled = true;
+            new MainWindow(isPrivate: true, profile: _profile).Show(); e.Handled = true;
         }
         else if (e.Key == Key.T && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
         {
@@ -1338,6 +1359,15 @@ public partial class MainWindow : Window
         }
         foreach (var engine in _engines.Values) await engine.DisposeAsync();
         _engines.Clear();
+        if (!_isPrivate)
+        {
+            lock (ProfileWindowsLock)
+            {
+                if (ProfileWindows.TryGetValue(_profileKey, out var weak) &&
+                    weak.TryGetTarget(out var registered) && ReferenceEquals(registered, this))
+                    ProfileWindows.Remove(_profileKey);
+            }
+        }
         _privateLock?.Dispose();
         _privateLock = null;
         if (_privateDataRoot is not null && Directory.Exists(_privateDataRoot))
