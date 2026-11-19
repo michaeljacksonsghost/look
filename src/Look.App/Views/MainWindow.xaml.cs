@@ -147,6 +147,7 @@ public partial class MainWindow : Window
         var previous = _active;
         if (_splitTab?.Id == tab.Id && previous is not null && previous.Id != tab.Id)
         {
+            tab.IsSplit = false;
             _splitTab = previous;
             _splitTab.IsSplit = true;
         }
