@@ -25,6 +25,9 @@ public partial class BrowserTab : ObservableObject
     private bool isActive;
 
     [ObservableProperty]
+    private bool isSplit;
+
+    [ObservableProperty]
     private string spaceId = "default";
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(Title) ? "New tab" : Title;
