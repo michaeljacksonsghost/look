@@ -182,8 +182,6 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         await _view.CoreWebView2.ExecuteScriptAsync($"window.find({encodedQuery}, false, {backwardsLiteral}, true, false, true, false);");
     }
 
-    private sealed record ReaderPayload(string Title, string Text);
-
     public async Task SetReaderModeAsync(bool enabled)
     {
         EnsureInitialized();
@@ -210,18 +208,20 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         })()";
         var scriptResult = await _view.CoreWebView2.ExecuteScriptAsync(extractionScript);
         var payloadJson = JsonSerializer.Deserialize<string>(scriptResult);
-        var payload = payloadJson is null ? null :
-            JsonSerializer.Deserialize<ReaderPayload>(payloadJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        if (payload is null || string.IsNullOrWhiteSpace(payload.Text))
+        if (payloadJson is null)
+            throw new InvalidOperationException("look couldn't read this page.");
+        using var payloadDocument = JsonDocument.Parse(payloadJson);
+        var payloadTitle = payloadDocument.RootElement.GetProperty("title").GetString() ?? current.Host;
+        var payloadText = payloadDocument.RootElement.GetProperty("text").GetString() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(payloadText))
             throw new InvalidOperationException("look couldn't find readable text on this page.");
 
         var html = new StringBuilder();
         html.Append("<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>");
-        html.Append("<title>").Append(WebUtility.HtmlEncode(payload.Title)).Append("</title>");
+        html.Append("<title>").Append(WebUtility.HtmlEncode(payloadTitle)).Append("</title>");
         html.Append("<style>html{background:#f4f1e9;color:#292820}body{margin:0;padding:56px 24px 96px;font-family:Georgia,serif;font-size:19px;line-height:1.8}main{max-width:740px;margin:0 auto}h1{font-size:2.2rem;line-height:1.2;font-weight:500;margin:0 0 2.2rem}p{margin:0 0 1.25rem;white-space:pre-wrap}::selection{background:#d8d3c6}</style>");
         html.Append("</head><body><main><h1>").Append(WebUtility.HtmlEncode(payload.Title)).Append("</h1>");
-        foreach (var paragraph in payload.Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+        foreach (var paragraph in payloadText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
             var trimmed = paragraph.Trim();
             if (trimmed.Length > 0)
