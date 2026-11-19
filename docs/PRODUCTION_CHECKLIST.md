@@ -98,7 +98,7 @@ The following capabilities now have initial code paths, but remain unchecked abo
 - Resizable two-pane split view with pane switching.
 - Named persistent profiles with isolated WebView2 storage and profile-specific browser data.
 - Text-first reader mode that restores the original URL when exited.
-- Per-domain custom CSS editor with document-creation injection.
+- Per-domain custom CSS editor with document-creation injection and click-to-hide element picker.
 
 WebView2's documented extension UI limitations mean toolbar action/popup hosting and full extension compatibility are still open requirements.
 
