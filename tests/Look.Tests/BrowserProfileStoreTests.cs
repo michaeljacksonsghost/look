@@ -29,6 +29,17 @@ public sealed class BrowserProfileStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task ProfilesCanBeRenamedAndDeleted()
+    {
+        var store = new BrowserProfileStore(FilePath);
+        var profile = await store.CreateProfileAsync("Research");
+        var renamed = await store.RenameProfileAsync(profile.Id, "Work");
+        Assert.Equal("Work", renamed.Name);
+        Assert.True(await store.DeleteProfileAsync(profile.Id));
+        Assert.Empty(await store.GetProfilesAsync());
+    }
+
+    [Fact]
     public async Task InvalidProfileNamesAreRejected()
     {
         var store = new BrowserProfileStore(FilePath);
