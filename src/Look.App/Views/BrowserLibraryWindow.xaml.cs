@@ -8,9 +8,9 @@ namespace Look.Views;
 
 public partial class BrowserLibraryWindow : Window
 {
-    private enum EntryKind { Bookmark, History, Download }
+    public enum EntryKind { Bookmark, History, Download }
 
-    private sealed record LibraryItem(Guid Id, EntryKind Kind, string Title, string Address, string Metadata, string? FilePath = null);
+    public sealed record LibraryItem(Guid Id, EntryKind Kind, string Title, string Address, string Metadata, string? FilePath = null);
 
     private readonly BrowserDataStore _store;
     private readonly Action<string> _openAddress;
