@@ -50,7 +50,9 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             EnvironmentGate.Release();
         }
 
-        await _view.EnsureCoreWebView2Async(SharedEnvironment);
+        var environment = SharedEnvironment
+            ?? throw new InvalidOperationException("The WebView2 environment could not be created.");
+        await _view.EnsureCoreWebView2Async(environment);
         var core = _view.CoreWebView2;
         core.Settings.AreDefaultContextMenusEnabled = true;
         core.Settings.IsStatusBarEnabled = false;
