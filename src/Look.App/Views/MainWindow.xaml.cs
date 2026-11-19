@@ -143,7 +143,7 @@ public partial class MainWindow : Window
         engine.PermissionRequested += (_, request) =>
         {
             var decision = MessageBox.Show(
-                $"{request.Origin} wants permission to use {request.PermissionKind}.\\n\\nAllow this request once?",
+                $"{request.Origin} wants permission to use {request.PermissionKind}.\n\nAllow this request once?",
                 "Site permission", MessageBoxButton.YesNo, MessageBoxImage.Question);
             var allowed = decision == MessageBoxResult.Yes;
             request.Respond(allowed);
