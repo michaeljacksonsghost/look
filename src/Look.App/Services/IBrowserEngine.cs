@@ -13,6 +13,8 @@ public interface IBrowserEngine : IAsyncDisposable
     Task GoForwardAsync();
     Task ReloadAsync(bool bypassCache = false);
     Task StopAsync();
+    Task<bool> TrySuspendAsync();
+    Task ResumeAsync();
     Task FindInPageAsync(string query, bool backwards = false);
     Task ConfigureContentBlockingAsync(BrowserSettings settings);
     Task<IReadOnlyList<BrowserExtensionInfo>> GetExtensionsAsync();
