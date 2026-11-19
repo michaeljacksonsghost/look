@@ -1,4 +1,4 @@
-<Application x:Class="Look.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" StartupUri="Views/MainWindow.xaml">
+<Application x:Class="Look.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 <Application.Resources>
 <Color x:Key="Ink">#E9E9E6</Color><Color x:Key="Muted">#92928E</Color><Color x:Key="Canvas">#171816</Color><Color x:Key="Panel">#20211F</Color><Color x:Key="Raised">#292A27</Color><Color x:Key="Line">#343531</Color>
 <SolidColorBrush x:Key="InkBrush" Color="{StaticResource Ink}"/><SolidColorBrush x:Key="MutedBrush" Color="{StaticResource Muted}"/><SolidColorBrush x:Key="CanvasBrush" Color="{StaticResource Canvas}"/><SolidColorBrush x:Key="PanelBrush" Color="{StaticResource Panel}"/><SolidColorBrush x:Key="LineBrush" Color="{StaticResource Line}"/>
