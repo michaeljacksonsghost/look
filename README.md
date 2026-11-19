@@ -50,17 +50,17 @@ On Windows, install Inno Setup 6 and run:
 .\scripts\build-release.ps1
 ```
 
-The script runs tests, publishes a self-contained x64 app, creates a portable ZIP, and compiles the installer when Inno Setup is available. The portable launcher uses a `Data` directory beside the executable. Both distributions require the Microsoft Edge WebView2 Evergreen Runtime; the installer includes Microsoft's bootstrapper and installs it if missing.
+The script builds and tests the solution, publishes a self-contained x64 app, creates a portable ZIP, and compiles the installer when Inno Setup is available. The portable launcher uses a `Data` directory beside the executable and checks for the WebView2 Evergreen Runtime, running Microsoft's bootstrapper if it is missing. The installer also includes the bootstrapper.
 
 See [release instructions](docs/RELEASING.md).
 
 ## Product principles
 
 - Local-first; no account, ads, analytics, or telemetry by default.
-- Credentials must use Windows Credential Manager / DPAPI, never plaintext.
+- No password vault or automatic password filling is implemented. Any future credential storage must use Windows Credential Manager / DPAPI, never plaintext.
 - No automatic password filling.
 - Private windows use a separate temporary profile, remove their data folder on normal close, and clean abandoned folders on the next startup; forensic privacy review is still required.
-- Installer and portable builds are planned through the release script but have not yet been built and verified.
+- Installer and portable builds are defined in the release script but have not yet passed the full Windows build and packaging workflow.
 
 ## Project documents
 
@@ -69,6 +69,8 @@ See [release instructions](docs/RELEASING.md).
 - [Build status](BUILD_STATUS.md)
 - [Engine decision record](docs/ENGINE_DECISION.md)
 - [Release workflow](docs/RELEASING.md)
+- [Privacy notice](docs/PRIVACY.md)
+- [Threat model](docs/THREAT_MODEL.md)
 - [Changelog](CHANGELOG.md)
 
 ## Provenance
