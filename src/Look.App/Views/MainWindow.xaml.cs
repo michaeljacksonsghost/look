@@ -381,6 +381,11 @@ public partial class MainWindow : Window
         await _dataStore.SaveSessionAsync(snapshots, activeIndex);
     }
 
+    private async void Stop_Click(object sender, RoutedEventArgs e)
+    {
+        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine)) await engine.StopAsync();
+    }
+
     private async void Back_Click(object sender, RoutedEventArgs e)
     {
         if (_active is not null && _engines.TryGetValue(_active.Id, out var engine)) await engine.GoBackAsync();
