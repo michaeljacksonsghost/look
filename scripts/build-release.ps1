@@ -21,11 +21,15 @@ try {
     if (Test-Path $portableZip) { Remove-Item $portableZip -Force }
     Compress-Archive -Path (Join-Path $publish "*") -DestinationPath $portableZip
 
-    $iscc = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
-    if ($iscc) {
+    $isccPath = (Get-Command "ISCC.exe" -ErrorAction SilentlyContinue).Source
+    if (-not $isccPath) {
+        $candidate = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\\ISCC.exe"
+        if (Test-Path $candidate) { $isccPath = $candidate }
+    }
+    if ($isccPath) {
         $bootstrapper = Join-Path $artifacts "MicrosoftEdgeWebview2Setup.exe"
         Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $bootstrapper
-        & $iscc.Source "/DAppVersion=0.1.0" (Join-Path $root "packaging\look.iss")
+        & $isccPath "/DAppVersion=0.1.0" (Join-Path $root "packaging\look.iss")
         if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
     }
     else {
