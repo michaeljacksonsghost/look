@@ -527,6 +527,67 @@ public partial class MainWindow : Window
         _ = SaveSessionQuietlyAsync();
     }
 
+    private void OpenProfileWindow(BrowserProfileInfo? profile)
+    {
+        var key = profile?.Id ?? "default";
+        lock (ProfileWindowsLock)
+        {
+            if (ProfileWindows.TryGetValue(key, out var weak) &&
+                weak.TryGetTarget(out var existing) && existing.IsLoaded)
+            {
+                if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal;
+                existing.Activate();
+                return;
+            }
+        }
+
+        var window = new MainWindow(engineFactory: _engineFactory, profile: profile);
+        window.Show();
+    }
+
+    private string? PromptForProfileName()
+    {
+        var dialog = new Window
+        {
+            Title = "Create a profile",
+            Width = 360,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+            ResizeMode = ResizeMode.NoResize,
+            Background = (System.Windows.Media.Brush)FindResource("PanelBrush"),
+            Foreground = (System.Windows.Media.Brush)FindResource("InkBrush")
+        };
+        var layout = new StackPanel { Margin = new Thickness(20) };
+        layout.Children.Add(new TextBlock { Text = "Name this browser profile", Margin = new Thickness(0, 0, 0, 10) });
+        var input = new TextBox
+        {
+            MinWidth = 280,
+            MaxLength = 32,
+            Padding = new Thickness(9, 6, 9, 6),
+            Background = (System.Windows.Media.Brush)FindResource("CanvasBrush"),
+            Foreground = (System.Windows.Media.Brush)FindResource("InkBrush"),
+            BorderBrush = (System.Windows.Media.Brush)FindResource("LineBrush")
+        };
+        layout.Children.Add(input);
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+        var cancel = new Button { Content = "Cancel", Style = (Style)FindResource("QuietButton"), Margin = new Thickness(0, 0, 8, 0) };
+        cancel.Click += (_, _) => dialog.DialogResult = false;
+        var create = new Button { Content = "Create", Style = (Style)FindResource("QuietButton"), IsDefault = true };
+        create.Click += (_, _) => dialog.DialogResult = true;
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(create);
+        layout.Children.Add(buttons);
+        dialog.Content = layout;
+        dialog.Loaded += (_, _) => input.Focus();
+        return dialog.ShowDialog() == true ? input.Text.Trim() : null;
+    }
+
     private string? PromptForSpaceName()
     {
         var dialog = new Window
@@ -764,6 +825,31 @@ public partial class MainWindow : Window
     private async void Menu_Click(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu();
+        var profilesMenu = new MenuItem { Header = _profile is null ? "Profiles" : $"Profiles · {_profile.Name}" };
+        var defaultProfile = new MenuItem { Header = _profile is null ? "Default (current)" : "Default" };
+        defaultProfile.IsEnabled = _profile is not null;
+        defaultProfile.Click += (_, _) => OpenProfileWindow(null);
+        profilesMenu.Items.Add(defaultProfile);
+        var profiles = await _profileStore.GetProfilesAsync();
+        foreach (var profile in profiles)
+        {
+            var profileItem = new MenuItem { Header = profile.Name, IsEnabled = profile.Id != _profile?.Id, Tag = profile };
+            profileItem.Click += (_, _) => OpenProfileWindow(profile);
+            profilesMenu.Items.Add(profileItem);
+        }
+        profilesMenu.Items.Add(new Separator());
+        var createProfile = new MenuItem { Header = "Create profile…" };
+        createProfile.Click += async (_, _) =>
+        {
+            var profileName = PromptForProfileName();
+            if (string.IsNullOrWhiteSpace(profileName)) return;
+            try { OpenProfileWindow(await _profileStore.CreateProfileAsync(profileName)); }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Create profile", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        };
+        profilesMenu.Items.Add(createProfile);
+        menu.Items.Add(profilesMenu);
+        menu.Items.Add(new Separator());
+
         var library = new MenuItem { Header = "Open library…" };
         library.Click += (_, _) =>
         {
