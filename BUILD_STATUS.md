@@ -12,6 +12,7 @@ The current development branch contains:
 - Local JSON persistence for session tabs, recently closed tabs, bookmarks, history, and downloads.
 - Save-as download flow, completion/interruption tracking, and recent downloads list.
 - Basic unpacked-extension install/list/enable/disable/remove.
+- User-configurable per-domain request blocking with an allowlist and per-profile settings.
 - Private windows with a separate temporary profile/data directory; the directory is deleted on normal close where Windows releases the files.
 - Explicit portable mode that stores profile and browser data beside the executable in a Data directory.
 - Version metadata, changelog, release instructions, PowerShell packaging script, and Inno Setup installer definition.
@@ -39,7 +40,8 @@ This environment cannot run the Windows WPF application or .NET Windows runtime.
 - No separate persistent user profiles beyond the default profile and private-window profiles.
 - Tab suspension/resume and renderer crash recovery are not implemented.
 - History search and per-entry deletion are not implemented.
-- Content blocking, reader mode, custom CSS/element hiding, split view, Spaces, and tab switcher are not implemented.
+- Reader mode, custom CSS/element hiding, split view, Spaces, and tab switcher are not implemented.
+- Domain blocking is a simple user-managed host block/allow list, not a maintained ad/tracker filter list.
 - Credential vault and site permission manager are not implemented.
 - Installer and portable package definitions exist, but actual artifacts have not yet been built and verified.
 - Code signing, updater, rollback, and release checksums remain outstanding.
