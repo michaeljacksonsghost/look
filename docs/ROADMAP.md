@@ -21,7 +21,7 @@
 - [x] Add stop, find-in-page, pin, duplicate, mute, close, and drag reorder actions.
 - [x] Add local session restore/autosave, recently closed tabs, bookmarks, and history.
 - [x] Add save-as downloads and a recent downloads list.
-- [ ] Add history search and per-entry deletion.
+- [x] Add searchable Library view and individual bookmark/history/download-record deletion (runtime verification pending).
 - [x] Add background tab suspend/resume (runtime verification pending).
 - [ ] Add renderer crash recovery.
 - [ ] Add complete keyboard shortcut map and tab switcher.
