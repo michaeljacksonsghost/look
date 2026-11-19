@@ -308,13 +308,13 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         {
             using var message = JsonDocument.Parse(e.WebMessageAsJson);
             var root = message.RootElement;
-            if (root.TryGetProperty("type", out var type) &&
-                type.GetString() == "look-element-picked" &&
-                root.TryGetProperty("selector", out var selector))
+            if (!root.TryGetProperty("type", out var type)) return;
+            if (type.GetString() == "look-element-picker-cancelled")
+                ElementPicked?.Invoke(this, string.Empty);
+            else if (type.GetString() == "look-element-picked" && root.TryGetProperty("selector", out var selector))
             {
                 var value = selector.GetString();
-                if (!string.IsNullOrWhiteSpace(value))
-                    ElementPicked?.Invoke(this, value);
+                if (!string.IsNullOrWhiteSpace(value)) ElementPicked?.Invoke(this, value);
             }
         }
         catch (JsonException) { /* Ignore messages that are not look picker payloads. */ }
