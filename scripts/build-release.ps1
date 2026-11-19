@@ -20,6 +20,7 @@ try {
     Copy-Item (Join-Path $root "README.md") $publish
     if (Test-Path $portableZip) { Remove-Item $portableZip -Force }
     Compress-Archive -Path (Join-Path $publish "*") -DestinationPath $portableZip
+    Remove-Item (Join-Path $publish "look-portable.cmd") -Force
 
     $isccPath = (Get-Command "ISCC.exe" -ErrorAction SilentlyContinue).Source
     if (-not $isccPath) {
