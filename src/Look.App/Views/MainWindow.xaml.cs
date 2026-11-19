@@ -559,6 +559,13 @@ public partial class MainWindow : Window
                 weak.TryGetTarget(out var window) && window.IsLoaded;
     }
 
+    private void OpenTabSwitcher()
+    {
+        var switcher = new TabSwitcherWindow(_tabs) { Owner = this };
+        if (switcher.ShowDialog() == true && switcher.SelectedTab is { } selected)
+            SelectTab(selected);
+    }
+
     private void OpenProfileWindow(BrowserProfileInfo? profile)
     {
         var key = profile?.Id ?? "default";
@@ -944,6 +951,9 @@ public partial class MainWindow : Window
             splitMenu.Items.Add(closeSplit);
         }
         menu.Items.Add(splitMenu);
+        var switchTab = new MenuItem { Header = "Switch tab…" };
+        switchTab.Click += (_, _) => OpenTabSwitcher();
+        menu.Items.Add(switchTab);
         var readerMode = new MenuItem
         {
             Header = "Reader mode",
@@ -1449,6 +1459,11 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0 &&
+            (Keyboard.Modifiers & ModifierKeys.Shift) != 0 && e.Key == Key.A)
+        {
+            OpenTabSwitcher(); e.Handled = true; return;
+        }
         if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
         if (e.Key == Key.F)
         {
