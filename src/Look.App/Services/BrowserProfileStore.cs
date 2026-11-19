@@ -6,16 +6,16 @@ namespace Look.Services;
 public sealed class BrowserProfileStore
 {
     private readonly string _filePath;
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private static readonly SemaphoreSlim GlobalGate = new(1, 1);
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     public BrowserProfileStore(string filePath) => _filePath = Path.GetFullPath(filePath);
 
     public async Task<IReadOnlyList<BrowserProfileInfo>> GetProfilesAsync(CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await GlobalGate.WaitAsync(cancellationToken);
         try { return (await LoadAsync(cancellationToken)).ToList(); }
-        finally { _gate.Release(); }
+        finally { GlobalGate.Release(); }
     }
 
     public async Task<BrowserProfileInfo> CreateProfileAsync(string name, CancellationToken cancellationToken = default)
