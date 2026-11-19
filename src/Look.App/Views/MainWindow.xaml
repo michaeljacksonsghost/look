@@ -21,6 +21,13 @@
                     <TextBlock Text="look" FontSize="18" FontWeight="SemiBold"/>
                     <TextBlock x:Name="ModeText" Text=" / quietly yours" Foreground="{StaticResource MutedBrush}"
                                Margin="8,0" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="SpaceSelector" Width="126" Margin="12,0,4,0" Padding="7,3"
+                              Background="{StaticResource PanelBrush}" Foreground="{StaticResource InkBrush}"
+                              BorderBrush="{StaticResource LineBrush}" FontSize="11"
+                              DisplayMemberPath="Name" SelectedValuePath="Id"
+                              SelectionChanged="SpaceSelector_SelectionChanged"/>
+                    <Button Content="＋" Click="NewSpace_Click" ToolTip="Create a space"
+                            Style="{StaticResource QuietButton}" FontSize="15"/>
                 </StackPanel>
                 <Button DockPanel.Dock="Right" Content="＋" Click="NewTab_Click"
                         Style="{StaticResource QuietButton}" FontSize="20"/>
