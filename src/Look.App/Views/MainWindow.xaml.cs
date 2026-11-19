@@ -363,7 +363,7 @@ public partial class MainWindow : Window
                 try { await _dataStore.AddHistoryAsync(tab.Title, tab.Address); }
                 catch (IOException) { if (_active?.Id == tab.Id) StatusText.Text = "History could not be saved"; }
             }
-            if (_active?.Id != tab.Id)
+            if (_active?.Id != tab.Id && _splitTab?.Id != tab.Id)
                 await engine.TrySuspendAsync();
             else
                 await SaveSessionQuietlyAsync();
@@ -414,11 +414,8 @@ public partial class MainWindow : Window
                 return;
 
             await engine.NavigateAsync(uri);
-            if (_active?.Id != tab.Id) return;
-
-            BrowserHost.Children.Clear();
-            BrowserHost.Children.Add(engine.View);
-            BrowserHost.Visibility = Visibility.Visible;
+            if (_active?.Id != tab.Id && _splitTab?.Id != tab.Id) return;
+            RenderBrowserHost();
         }
         catch (Exception ex)
         {
@@ -705,6 +702,28 @@ public partial class MainWindow : Window
         var privateWindow = new MenuItem { Header = "New private window" };
         privateWindow.Click += (_, _) => new MainWindow(isPrivate: true, engineFactory: _engineFactory).Show();
         menu.Items.Add(privateWindow);
+        var splitMenu = new MenuItem { Header = _splitTab is null ? "Open split view" : "Change split pane" };
+        foreach (var candidate in _tabs.Where(tab => tab.SpaceId == _activeSpaceId && tab.Id != _active?.Id))
+        {
+            var splitItem = new MenuItem
+            {
+                Header = string.IsNullOrWhiteSpace(candidate.Title) ? candidate.Address : candidate.Title,
+                Tag = candidate,
+                ToolTip = candidate.Address
+            };
+            splitItem.Click += async (_, _) => await OpenSplitViewAsync(candidate);
+            splitMenu.Items.Add(splitItem);
+        }
+        if (splitMenu.Items.Count == 0)
+            splitMenu.Items.Add(new MenuItem { Header = "Open another tab in this space first", IsEnabled = false });
+        if (_splitTab is not null)
+        {
+            splitMenu.Items.Add(new Separator());
+            var closeSplit = new MenuItem { Header = "Close split view" };
+            closeSplit.Click += (_, _) => CloseSplitView();
+            splitMenu.Items.Add(closeSplit);
+        }
+        menu.Items.Add(splitMenu);
         var addBookmark = new MenuItem { Header = "Add / remove bookmark" };
         addBookmark.Click += Bookmark_Click;
         menu.Items.Add(addBookmark);
