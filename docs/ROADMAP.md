@@ -37,7 +37,8 @@
 - [ ] Preserve images, links, article structure, and scroll position in reader mode.
 - [x] Add user-managed per-domain blocking and allowlist exceptions (runtime verification pending).
 - [ ] Add maintained ad/tracker filter lists and per-site controls.
-- [ ] Document-start element hiding and custom CSS.
+- [x] Per-domain custom CSS injected at document creation (runtime verification pending).
+- [ ] Visual element-picker hiding and per-site CSS rule management UI.
 - [ ] Picture-in-picture and media controls.
 
 ## 4 — Privacy and security
