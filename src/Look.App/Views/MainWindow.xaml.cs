@@ -462,14 +462,11 @@ public partial class MainWindow : Window
             foreach (var domain in blockingSettings.BlockedDomains)
             {
                 var remove = new MenuItem { Header = $"Unblock {domain}", Tag = domain };
-                remove.Click += async (_, args) =>
+                remove.Click += async (_, _) =>
                 {
-                    if ((args.OriginalSource as MenuItem)?.Tag is string selectedDomain)
-                    {
-                        await _dataStore.RemoveBlockedDomainAsync(selectedDomain);
-                        await ApplyContentBlockingSettingsAsync();
-                        StatusText.Text = $"Unblocked {selectedDomain}";
-                    }
+                    await _dataStore.RemoveBlockedDomainAsync(domain);
+                    await ApplyContentBlockingSettingsAsync();
+                    StatusText.Text = $"Unblocked {domain}";
                 };
                 blockedList.Items.Add(remove);
             }
@@ -481,14 +478,11 @@ public partial class MainWindow : Window
             foreach (var domain in blockingSettings.AllowedDomains)
             {
                 var remove = new MenuItem { Header = $"Remove exception for {domain}", Tag = domain };
-                remove.Click += async (_, args) =>
+                remove.Click += async (_, _) =>
                 {
-                    if ((args.OriginalSource as MenuItem)?.Tag is string selectedDomain)
-                    {
-                        await _dataStore.RemoveAllowedDomainAsync(selectedDomain);
-                        await ApplyContentBlockingSettingsAsync();
-                        StatusText.Text = $"Removed exception for {selectedDomain}";
-                    }
+                    await _dataStore.RemoveAllowedDomainAsync(domain);
+                    await ApplyContentBlockingSettingsAsync();
+                    StatusText.Text = $"Removed exception for {domain}";
                 };
                 exceptions.Items.Add(remove);
             }
