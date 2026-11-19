@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "look Extension Compatibility Test",
+  "version": "1.0.0",
+  "description": "A local fixture for testing WebView2 extension installation, popup UI, content scripts, storage, and service workers.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
