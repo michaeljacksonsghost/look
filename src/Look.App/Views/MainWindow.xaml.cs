@@ -502,6 +502,7 @@ public partial class MainWindow : Window
             {
                 await _dataStore.AddBlockedDomainAsync(host);
                 await ApplyContentBlockingSettingsAsync();
+                await ReloadActivePageAsync();
                 StatusText.Text = $"Blocked {host}";
             }
             catch (ArgumentException ex) { MessageBox.Show(ex.Message, "Content blocking"); }
@@ -516,6 +517,7 @@ public partial class MainWindow : Window
             {
                 await _dataStore.AddAllowedDomainAsync(host);
                 await ApplyContentBlockingSettingsAsync();
+                await ReloadActivePageAsync();
                 StatusText.Text = $"Added exception for {host}";
             }
             catch (ArgumentException ex) { MessageBox.Show(ex.Message, "Content blocking"); }
@@ -532,6 +534,7 @@ public partial class MainWindow : Window
                 {
                     await _dataStore.RemoveBlockedDomainAsync(domain);
                     await ApplyContentBlockingSettingsAsync();
+                    await ReloadActivePageAsync();
                     StatusText.Text = $"Unblocked {domain}";
                 };
                 blockedList.Items.Add(remove);
@@ -548,6 +551,7 @@ public partial class MainWindow : Window
                 {
                     await _dataStore.RemoveAllowedDomainAsync(domain);
                     await ApplyContentBlockingSettingsAsync();
+                    await ReloadActivePageAsync();
                     StatusText.Text = $"Removed exception for {domain}";
                 };
                 exceptions.Items.Add(remove);
@@ -627,6 +631,12 @@ public partial class MainWindow : Window
                Uri.TryCreate(_active.Address, UriKind.Absolute, out var uri) &&
                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
                (host = uri.Host).Length > 0;
+    }
+
+    private async Task ReloadActivePageAsync()
+    {
+        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine))
+            await engine.ReloadAsync();
     }
 
     private async Task ApplyContentBlockingSettingsAsync()
