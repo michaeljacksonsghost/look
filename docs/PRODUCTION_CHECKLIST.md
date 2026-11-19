@@ -5,12 +5,12 @@ This is the release acceptance checklist for the Windows browser. A feature is n
 ## 0. Project foundation
 - [x] Establish product name, repository, WPF solution, and initial shell.
 - [x] Record engine compatibility as an explicit release gate.
-- [ ] Add Windows CI for restore, build, and tests.
+- [x] Add Windows CI for restore, build, and tests.
 - [ ] Establish versioning, release notes, and a repeatable build process.
 - [ ] Verify clean checkout builds on a fresh Windows machine.
 
 ## 1. Browser engine and extensions — critical gate
-- [ ] Implement the engine adapter and keep engine-specific APIs out of the UI.
+- [x] Implement the engine adapter and keep engine-specific APIs out of the UI.
 - [ ] Compare WebView2 and CEF against the same extension test matrix.
 - [ ] Verify Manifest V3 service-worker startup, suspension, and recovery.
 - [ ] Verify content scripts, isolated worlds, and document-start injection.
