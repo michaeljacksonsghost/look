@@ -178,11 +178,22 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             e.Cancel = true;
             return;
         }
-        DownloadRequested.Invoke(this, new BrowserDownloadRequest(operation.Uri, suggestedName, destination =>
+        var request = new BrowserDownloadRequest(operation.Uri, suggestedName, destination =>
         {
             if (string.IsNullOrWhiteSpace(destination)) e.Cancel = true;
             else e.ResultFilePath = destination;
-        }));
+        });
+        void OnStateChanged(object? stateSender, object stateArgs)
+        {
+            if (operation.State == CoreWebView2DownloadState.Completed ||
+                operation.State == CoreWebView2DownloadState.Interrupted)
+            {
+                request.ReportFinished(operation.State == CoreWebView2DownloadState.Completed);
+                operation.StateChanged -= OnStateChanged;
+            }
+        }
+        operation.StateChanged += OnStateChanged;
+        DownloadRequested.Invoke(this, request);
     }
 
     private void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e) =>
