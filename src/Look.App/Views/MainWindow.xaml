@@ -19,7 +19,7 @@
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left"
                             VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="look" FontSize="18" FontWeight="SemiBold"/>
-                    <TextBlock Text=" / quietly yours" Foreground="{StaticResource MutedBrush}"
+                    <TextBlock x:Name="ModeText" Text=" / quietly yours" Foreground="{StaticResource MutedBrush}"
                                Margin="8,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 <Button DockPanel.Dock="Right" Content="＋" Click="NewTab_Click"
@@ -121,7 +121,7 @@
         <Border Grid.Row="3" Background="{StaticResource PanelBrush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
             <DockPanel Margin="12,0">
-                <TextBlock Text="LOOK · PRIVATE BY DESIGN" FontSize="9"
+                <TextBlock x:Name="FooterLabel" Text="LOOK · LOCAL FIRST" FontSize="9"
                            Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
                 <TextBlock x:Name="StatusText" Text="Ready" FontSize="9"
                            Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"
