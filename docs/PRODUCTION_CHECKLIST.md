@@ -96,6 +96,7 @@ The following capabilities now have initial code paths, but remain unchecked abo
 - Session autosave on tab selection and successful navigation.
 - User-managed domain blocking and allowlist settings.
 - Resizable two-pane split view with pane switching.
+- Named persistent profiles with isolated WebView2 storage and profile-specific browser data.
 - Text-first reader mode that restores the original URL when exited.
 - Per-domain custom CSS editor with document-creation injection.
 
