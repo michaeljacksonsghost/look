@@ -11,8 +11,11 @@ if (Test-Path $publish) { Remove-Item $publish -Recurse -Force }
 Push-Location $root
 try {
     dotnet restore ".\Look.slnx"
+    if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed." }
     dotnet test ".\Look.slnx" --configuration Release
+    if ($LASTEXITCODE -ne 0) { throw "Unit tests failed." }
     dotnet publish ".\src\Look.App\Look.App.csproj" --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=true --output $publish
+    if ($LASTEXITCODE -ne 0) { throw "Windows publish failed." }
 
     $launcher = "@echo off" + [Environment]::NewLine + 'start "" "%~dp0look.exe" --portable'
     Set-Content -Path (Join-Path $publish "look-portable.cmd") -Value $launcher -Encoding ASCII
