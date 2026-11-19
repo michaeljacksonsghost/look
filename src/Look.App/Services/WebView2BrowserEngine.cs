@@ -24,6 +24,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     public event EventHandler<string>? TitleChanged;
     public event EventHandler<Uri>? AddressChanged;
     public event EventHandler<bool>? LoadingChanged;
+    public event EventHandler<bool>? NavigationFinished;
 
     public async Task InitializeAsync(string userDataFolder, CancellationToken cancellationToken = default)
     {
@@ -113,8 +114,11 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     private void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e) =>
         LoadingChanged?.Invoke(this, true);
 
-    private void OnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e) =>
+    private void OnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
+    {
         LoadingChanged?.Invoke(this, false);
+        NavigationFinished?.Invoke(this, e.IsSuccess);
+    }
 
     public ValueTask DisposeAsync()
     {
@@ -130,6 +134,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         TitleChanged = null;
         AddressChanged = null;
         LoadingChanged = null;
+        NavigationFinished = null;
         return ValueTask.CompletedTask;
     }
 }
