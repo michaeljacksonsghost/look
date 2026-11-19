@@ -45,7 +45,10 @@ public sealed class BrowserProfileStore
         try
         {
             await using var stream = File.OpenRead(_filePath);
-            return await JsonSerializer.DeserializeAsync<List<BrowserProfileInfo>>(stream, JsonOptions, cancellationToken) ?? [];
+            var profiles = await JsonSerializer.DeserializeAsync<List<BrowserProfileInfo>>(stream, JsonOptions, cancellationToken) ?? [];
+            return profiles.Where(profile => profile is not null &&
+                Guid.TryParseExact(profile.Id, "N", out _) &&
+                !string.IsNullOrWhiteSpace(profile.Name) && profile.Name.Length <= 32).ToList();
         }
         catch (JsonException)
         {
