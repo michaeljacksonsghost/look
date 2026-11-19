@@ -362,6 +362,12 @@ public partial class MainWindow : Window
 
         var engine = _engineFactory.Create();
         _engines.Add(tab.Id, engine);
+
+        // Attach the WPF WebView2 control to the visual tree before EnsureCoreWebView2Async.
+        // Initializing an unattached control can leave the first navigation blank on some machines.
+        if (_active?.Id == tab.Id || _splitTab?.Id == tab.Id)
+            RenderBrowserHost();
+
         engine.TitleChanged += (_, title) => tab.Title = title;
         engine.AddressChanged += (_, uri) =>
         {
@@ -516,9 +522,11 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Could not open page";
-            MessageBox.Show($"look could not start this page.\n\n{ex.Message}\n\nIf the WebView2 Runtime is missing, install the Microsoft Edge WebView2 Evergreen Runtime.",
-                "look", MessageBoxButton.OK, MessageBoxImage.Warning);
+            StatusText.Text = "Page could not be opened";
+            BrowserHost.Visibility = Visibility.Collapsed;
+            WelcomePanel.Visibility = Visibility.Visible;
+            MessageBox.Show($"look could not open this page.\n\n{ex.Message}\n\nCheck your internet connection and confirm that the Microsoft Edge WebView2 Runtime is installed.",
+                "look — navigation error", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
