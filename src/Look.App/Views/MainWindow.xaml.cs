@@ -407,6 +407,14 @@ public partial class MainWindow : Window
     private async void Menu_Click(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu();
+        var library = new MenuItem { Header = "Open library…" };
+        library.Click += (_, _) =>
+        {
+            var window = new BrowserLibraryWindow(_dataStore, address => _ = NavigateAsync(address)) { Owner = this };
+            window.Show();
+        };
+        menu.Items.Add(library);
+        menu.Items.Add(new Separator());
         var privateWindow = new MenuItem { Header = "New private window" };
         privateWindow.Click += (_, _) => new MainWindow(isPrivate: true, engineFactory: _engineFactory).Show();
         menu.Items.Add(privateWindow);
