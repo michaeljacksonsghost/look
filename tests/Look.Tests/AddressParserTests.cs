@@ -27,6 +27,15 @@ public sealed class AddressParserTests
     }
 
     [Fact]
+    public void DomainWithPortGetsHttpsScheme()
+    {
+        var result = AddressParser.Parse("example.org:8443/path");
+        Assert.Equal("https", result.Scheme);
+        Assert.Equal("example.org", result.Host);
+        Assert.Equal(8443, result.Port);
+    }
+
+    [Fact]
     public void TextWithSpacesBecomesSearchQuery()
     {
         var result = AddressParser.Parse("quiet windows browser");
@@ -40,6 +49,7 @@ public sealed class AddressParserTests
     [InlineData("ftp://example.org/file.zip")]
     [InlineData("javascript:alert(1)")]
     [InlineData("chrome://settings")]
+    [InlineData("mailto:person@example.org")]
     public void NonHttpSchemesAreNotNavigatedDirectly(string input)
     {
         var result = AddressParser.Parse(input);
