@@ -48,6 +48,8 @@
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,18,0">
                     <TextBlock Text="SPACE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedBrush}"
                                VerticalAlignment="Center" Margin="0,0,9,0"/>
+                    <TextBlock x:Name="ModeText" Text=" / quietly yours" FontSize="10" Foreground="{StaticResource MutedBrush}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <ComboBox x:Name="SpaceSelector" Width="128" Margin="0,0,4,0" Padding="8,4"
                               Background="{StaticResource PanelBrush}" Foreground="{StaticResource InkBrush}"
                               BorderBrush="{StaticResource LineBrush}" FontSize="11"
