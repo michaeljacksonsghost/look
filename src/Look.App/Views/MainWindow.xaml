@@ -89,6 +89,20 @@
                 </StackPanel>
             </Grid>
             <Grid x:Name="BrowserHost" Visibility="Collapsed"/>
+            <Border x:Name="FindBar" HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Margin="0,12,16,0" Padding="8" CornerRadius="9"
+                    Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="1" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="FindTextBox" Width="210" Background="Transparent"
+                             Foreground="{StaticResource InkBrush}" BorderThickness="0"
+                             VerticalContentAlignment="Center" KeyDown="FindTextBox_KeyDown"
+                             ToolTip="Find on this page"/>
+                    <Button Content="↑" Click="FindPrevious_Click" Style="{StaticResource QuietButton}"/>
+                    <Button Content="↓" Click="FindNext_Click" Style="{StaticResource QuietButton}"/>
+                    <Button Content="×" Click="CloseFind_Click" Style="{StaticResource QuietButton}"/>
+                </StackPanel>
+            </Border>
         </Grid>
 
         <Border Grid.Row="3" Background="{StaticResource PanelBrush}"
