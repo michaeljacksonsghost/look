@@ -59,6 +59,26 @@ public sealed class BrowserDataStore
         }, cancellationToken);
     }
 
+    public async Task AddRecentlyClosedAsync(BrowserSessionTab tab, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data =>
+        {
+            if (!string.IsNullOrWhiteSpace(tab.Address))
+            {
+                data.RecentlyClosedTabs.Insert(0, tab);
+                data.RecentlyClosedTabs = data.RecentlyClosedTabs.Take(20).ToList();
+            }
+        }, cancellationToken);
+
+    public async Task<IReadOnlyList<BrowserSessionTab>> GetRecentlyClosedAsync(CancellationToken cancellationToken = default) =>
+        (await LoadAsync(cancellationToken)).RecentlyClosedTabs;
+
+    public async Task RemoveRecentlyClosedAsync(string address, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data =>
+        {
+            var index = data.RecentlyClosedTabs.FindIndex(tab => tab.Address == address);
+            if (index >= 0) data.RecentlyClosedTabs.RemoveAt(index);
+        }, cancellationToken);
+
     public async Task AddHistoryAsync(string title, string address, CancellationToken cancellationToken = default)
     {
         if (!Uri.TryCreate(address, UriKind.Absolute, out var uri) ||
@@ -144,6 +164,7 @@ public sealed class BrowserDataStore
     {
         SchemaVersion = data.SchemaVersion,
         SessionTabs = data.SessionTabs.ToList(),
+        RecentlyClosedTabs = data.RecentlyClosedTabs.ToList(),
         ActiveTabIndex = data.ActiveTabIndex,
         Bookmarks = data.Bookmarks.ToList(),
         History = data.History.ToList()
