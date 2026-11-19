@@ -93,6 +93,7 @@ The following capabilities now have initial code paths, but remain unchecked abo
 - Local bookmarks and browsing history, including clear-history action.
 - Find-in-page (Ctrl+F), stop navigation, and tab context actions for pin, duplicate, mute, and close.
 - WebView2 unpacked-extension install/list/enable/disable/remove.
+- Session autosave on tab selection and successful navigation.
 - User-managed domain blocking and allowlist settings.
 
 WebView2's documented extension UI limitations mean toolbar action/popup hosting and full extension compatibility are still open requirements.
