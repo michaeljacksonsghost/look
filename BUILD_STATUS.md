@@ -10,6 +10,7 @@ The current development branch contains:
 - Navigation, back/forward/reload/stop, and find-in-page.
 - Tab close, duplicate, pin, mute, drag reorder, keyboard shortcuts, and background tab suspend/resume.
 - Local JSON persistence for session tabs (autosaved on navigation/tab changes), recently closed tabs, bookmarks, history, and downloads.
+- Searchable Library window for bookmarks, full browsing history, and downloads, with individual deletion and open actions.
 - Save-as download flow, executable-file warning, completion/interruption tracking, and recent downloads list.
 - Per-request site permission prompts that default to deny and are not persisted.
 - Basic unpacked-extension install/list/enable/disable/remove using the current WebView2 profile.
@@ -40,7 +41,7 @@ This environment cannot run the Windows WPF application or .NET Windows runtime.
 - Private-window data is stored in a temporary directory, removed on normal close, and stale private folders are cleaned on next startup when no active window holds the exclusive lock; forensic privacy review remains outstanding.
 - No separate named persistent user profiles beyond the default profile and private-window profiles.
 - Tab suspension/resume and renderer crash recovery are not implemented.
-- History search and per-entry deletion are not implemented.
+- Library search and individual bookmark/history/download-record deletion are implemented in source; runtime verification is still pending.
 - Reader mode, custom CSS/element hiding, split view, Spaces, and tab switcher are not implemented.
 - Domain blocking is a simple user-managed host block/allow list, not a maintained ad/tracker filter list; service-worker/shared-worker requests are outside the current document-source filter.
 - Credential vault and site permission manager are not implemented.
