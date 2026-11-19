@@ -169,6 +169,7 @@ public partial class MainWindow : Window
         {
             await engine.InitializeAsync(_profileFolder);
             engine.IsMuted = tab.IsMuted;
+            await engine.ConfigureContentBlockingAsync(await _dataStore.GetSettingsAsync());
             return engine;
         }
         catch
@@ -410,6 +411,91 @@ public partial class MainWindow : Window
         }
         menu.Items.Add(extensionsMenu);
 
+        var blockingMenu = new MenuItem { Header = "Content blocking" };
+        var blockingSettings = await _dataStore.GetSettingsAsync();
+        var blockingToggle = new MenuItem
+        {
+            Header = "Enable domain blocking",
+            IsCheckable = true,
+            IsChecked = blockingSettings.ContentBlockingEnabled
+        };
+        blockingToggle.Click += async (_, _) =>
+        {
+            blockingSettings.ContentBlockingEnabled = blockingToggle.IsChecked;
+            await _dataStore.SaveSettingsAsync(blockingSettings);
+            await ApplyContentBlockingSettingsAsync();
+            StatusText.Text = blockingToggle.IsChecked ? "Domain blocking enabled" : "Domain blocking disabled";
+        };
+        blockingMenu.Items.Add(blockingToggle);
+
+        var blockCurrent = new MenuItem { Header = "Block current website" };
+        blockCurrent.Click += async (_, _) =>
+        {
+            if (!TryGetActiveHost(out var host)) { StatusText.Text = "Open a website first"; return; }
+            try
+            {
+                await _dataStore.AddBlockedDomainAsync(host);
+                await ApplyContentBlockingSettingsAsync();
+                StatusText.Text = $"Blocked {host}";
+            }
+            catch (ArgumentException ex) { MessageBox.Show(ex.Message, "Content blocking"); }
+        };
+        blockingMenu.Items.Add(blockCurrent);
+
+        var allowCurrent = new MenuItem { Header = "Allow current website" };
+        allowCurrent.Click += async (_, _) =>
+        {
+            if (!TryGetActiveHost(out var host)) { StatusText.Text = "Open a website first"; return; }
+            try
+            {
+                await _dataStore.AddAllowedDomainAsync(host);
+                await ApplyContentBlockingSettingsAsync();
+                StatusText.Text = $"Added exception for {host}";
+            }
+            catch (ArgumentException ex) { MessageBox.Show(ex.Message, "Content blocking"); }
+        };
+        blockingMenu.Items.Add(allowCurrent);
+
+        if (blockingSettings.BlockedDomains.Count > 0)
+        {
+            var blockedList = new MenuItem { Header = "Blocked domains" };
+            foreach (var domain in blockingSettings.BlockedDomains)
+            {
+                var remove = new MenuItem { Header = $"Unblock {domain}", Tag = domain };
+                remove.Click += async (_, args) =>
+                {
+                    if ((args.OriginalSource as MenuItem)?.Tag is string selectedDomain)
+                    {
+                        await _dataStore.RemoveBlockedDomainAsync(selectedDomain);
+                        await ApplyContentBlockingSettingsAsync();
+                        StatusText.Text = $"Unblocked {selectedDomain}";
+                    }
+                };
+                blockedList.Items.Add(remove);
+            }
+            blockingMenu.Items.Add(blockedList);
+        }
+        if (blockingSettings.AllowedDomains.Count > 0)
+        {
+            var exceptions = new MenuItem { Header = "Allowed exceptions" };
+            foreach (var domain in blockingSettings.AllowedDomains)
+            {
+                var remove = new MenuItem { Header = $"Remove exception for {domain}", Tag = domain };
+                remove.Click += async (_, args) =>
+                {
+                    if ((args.OriginalSource as MenuItem)?.Tag is string selectedDomain)
+                    {
+                        await _dataStore.RemoveAllowedDomainAsync(selectedDomain);
+                        await ApplyContentBlockingSettingsAsync();
+                        StatusText.Text = $"Removed exception for {selectedDomain}";
+                    }
+                };
+                exceptions.Items.Add(remove);
+            }
+            blockingMenu.Items.Add(exceptions);
+        }
+        menu.Items.Add(blockingMenu);
+
         var downloadsMenu = new MenuItem { Header = "Downloads" };
         foreach (var download in await _dataStore.GetDownloadsAsync(20))
         {
@@ -453,6 +539,22 @@ public partial class MainWindow : Window
         quit.Click += (_, _) => Close();
         menu.Items.Add(quit);
         menu.IsOpen = true;
+    }
+
+    private bool TryGetActiveHost(out string host)
+    {
+        host = string.Empty;
+        return _active is not null &&
+               Uri.TryCreate(_active.Address, UriKind.Absolute, out var uri) &&
+               (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+               (host = uri.Host).Length > 0;
+    }
+
+    private async Task ApplyContentBlockingSettingsAsync()
+    {
+        var settings = await _dataStore.GetSettingsAsync();
+        foreach (var engine in _engines.Values)
+            await engine.ConfigureContentBlockingAsync(settings);
     }
 
     private async void ExtensionToggle_Click(object sender, RoutedEventArgs e)
