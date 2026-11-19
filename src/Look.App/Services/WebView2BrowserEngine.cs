@@ -45,7 +45,8 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
                 SharedUserDataFolder = Path.GetFullPath(userDataFolder);
                 Directory.CreateDirectory(SharedUserDataFolder);
                 SharedEnvironment = await CoreWebView2Environment.CreateAsync(
-                    userDataFolder: SharedUserDataFolder);
+                    userDataFolder: SharedUserDataFolder,
+                    options: new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true });
             }
             else if (!string.Equals(SharedUserDataFolder, Path.GetFullPath(userDataFolder),
                          StringComparison.OrdinalIgnoreCase))
@@ -115,6 +116,39 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         var encodedQuery = JsonSerializer.Serialize(query);
         var backwardsLiteral = backwards ? "true" : "false";
         await _view.CoreWebView2.ExecuteScriptAsync($"window.find({encodedQuery}, false, {backwardsLiteral}, true, false, true, false);");
+    }
+
+    public async Task<IReadOnlyList<BrowserExtensionInfo>> GetExtensionsAsync()
+    {
+        EnsureInitialized();
+        var extensions = await _view.CoreWebView2.Profile.GetBrowserExtensionsAsync();
+        return extensions.Select(extension => new BrowserExtensionInfo(
+            extension.Id, extension.Name, extension.IsEnabled)).ToList();
+    }
+
+    public async Task<BrowserExtensionInfo> InstallExtensionAsync(string folderPath)
+    {
+        EnsureInitialized();
+        var extension = await _view.CoreWebView2.Profile.AddBrowserExtensionAsync(folderPath);
+        return new BrowserExtensionInfo(extension.Id, extension.Name, extension.IsEnabled);
+    }
+
+    public async Task SetExtensionEnabledAsync(string extensionId, bool enabled)
+    {
+        EnsureInitialized();
+        var extensions = await _view.CoreWebView2.Profile.GetBrowserExtensionsAsync();
+        var extension = extensions.FirstOrDefault(item => item.Id == extensionId)
+            ?? throw new InvalidOperationException("The selected extension is no longer installed.");
+        await extension.EnableAsync(enabled);
+    }
+
+    public async Task RemoveExtensionAsync(string extensionId)
+    {
+        EnsureInitialized();
+        var extensions = await _view.CoreWebView2.Profile.GetBrowserExtensionsAsync();
+        var extension = extensions.FirstOrDefault(item => item.Id == extensionId)
+            ?? throw new InvalidOperationException("The selected extension is no longer installed.");
+        await extension.RemoveAsync();
     }
 
     private void EnsureInitialized()
