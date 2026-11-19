@@ -293,8 +293,15 @@ public partial class MainWindow : Window
             (closedUri.Scheme == Uri.UriSchemeHttp || closedUri.Scheme == Uri.UriSchemeHttps))
             await _dataStore.AddRecentlyClosedAsync(new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned));
         if (wasActive) { BrowserHost.Children.Clear(); BrowserHost.Visibility = Visibility.Collapsed; }
+        _navigationVersions.Remove(tab.Id);
         _tabs.Remove(tab);
+        if (_engineInitializations.TryGetValue(tab.Id, out var pendingInitialization))
+        {
+            try { await pendingInitialization; }
+            catch { /* The tab is being closed; initialization failure needs no second dialog. */ }
+        }
         if (_engines.Remove(tab.Id, out var engine)) await engine.DisposeAsync();
+        _engineInitializations.Remove(tab.Id);
         if (_tabs.Count == 0) AddTab();
         else if (wasActive) SelectTab(_tabs[Math.Clamp(index - 1, 0, _tabs.Count - 1)]);
         await SaveSessionAsync();
@@ -752,6 +759,11 @@ public partial class MainWindow : Window
         try { await SaveSessionAsync(); }
         catch (IOException) { /* A failed session write must not prevent shutdown. */ }
         BrowserHost.Children.Clear();
+        foreach (var pending in _engineInitializations.Values.ToList())
+        {
+            try { await pending; }
+            catch { /* Continue shutdown after an individual tab initialization failure. */ }
+        }
         foreach (var engine in _engines.Values) await engine.DisposeAsync();
         _engines.Clear();
         if (_privateDataRoot is not null && Directory.Exists(_privateDataRoot))
