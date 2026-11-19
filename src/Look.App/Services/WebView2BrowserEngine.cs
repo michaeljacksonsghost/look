@@ -1,6 +1,7 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using System.Windows;
+using System.Text.Json;
 
 namespace Look.Services;
 
@@ -94,6 +95,20 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             await _view.CoreWebView2.ExecuteScriptAsync("location.reload(true)");
         else
             _view.CoreWebView2.Reload();
+    }
+
+    public Task StopAsync()
+    {
+        if (_initialized) _view.CoreWebView2.Stop();
+        return Task.CompletedTask;
+    }
+
+    public async Task FindInPageAsync(string query, bool backwards = false)
+    {
+        if (!_initialized || string.IsNullOrWhiteSpace(query)) return;
+        var encodedQuery = JsonSerializer.Serialize(query);
+        var backwardsLiteral = backwards ? "true" : "false";
+        await _view.CoreWebView2.ExecuteScriptAsync($"window.find({encodedQuery}, false, {backwardsLiteral}, true, false, true, false);");
     }
 
     private void EnsureInitialized()
