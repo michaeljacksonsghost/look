@@ -8,9 +8,10 @@ The current development branch contains:
 - Separate WebView2 control and navigation state per tab.
 - Shared environment manager with reference counting for regular and isolated profiles.
 - Navigation, back/forward/reload/stop, and find-in-page.
-- Tab close, duplicate, pin, mute, drag reorder, and keyboard shortcuts.
+- Tab close, duplicate, pin, mute, drag reorder, keyboard shortcuts, and background tab suspend/resume.
 - Local JSON persistence for session tabs, recently closed tabs, bookmarks, history, and downloads.
-- Save-as download flow, completion/interruption tracking, and recent downloads list.
+- Save-as download flow, executable-file warning, completion/interruption tracking, and recent downloads list.
+- Per-request site permission prompts that default to deny and are not persisted.
 - Basic unpacked-extension install/list/enable/disable/remove.
 - User-configurable per-domain request blocking with an allowlist and per-profile settings.
 - Private windows with a separate temporary profile/data directory; the directory is deleted on normal close where Windows releases the files.
@@ -36,12 +37,12 @@ This environment cannot run the Windows WPF application or .NET Windows runtime.
 ## Known limitations
 
 - WebView2 extension support is partial: unpacked local folders only, with no browser toolbar action/popup host. Full Manifest V3 behavior, native messaging, and Chrome Web Store/CRX installation remain unverified or unsupported.
-- Private-window data is stored in a temporary directory and removed on normal close; crash recovery cleanup and forensic privacy review remain outstanding.
+- Private-window data is stored in a temporary directory, removed on normal close, and stale private folders are cleaned on next startup when no active window holds the exclusive lock; forensic privacy review remains outstanding.
 - No separate persistent user profiles beyond the default profile and private-window profiles.
 - Tab suspension/resume and renderer crash recovery are not implemented.
 - History search and per-entry deletion are not implemented.
 - Reader mode, custom CSS/element hiding, split view, Spaces, and tab switcher are not implemented.
-- Domain blocking is a simple user-managed host block/allow list, not a maintained ad/tracker filter list.
+- Domain blocking is a simple user-managed host block/allow list, not a maintained ad/tracker filter list; service-worker/shared-worker requests are outside the current document-source filter.
 - Credential vault and site permission manager are not implemented.
 - Installer and portable package definitions exist, but actual artifacts have not yet been built and verified.
 - Code signing, updater, rollback, and release checksums remain outstanding.
