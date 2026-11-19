@@ -58,7 +58,10 @@ public partial class MainWindow : Window
             ModeText.Text = " / private window";
             FooterLabel.Text = "LOOK · PRIVATE SESSION";
         }
-        TabsList.ItemsSource = _tabs;
+        _tabView = CollectionViewSource.GetDefaultView(_tabs);
+        _tabView.Filter = item => item is BrowserTab tab && tab.SpaceId == _activeSpaceId;
+        TabsList.ItemsSource = _tabView;
+        SpaceSelector.ItemsSource = _spaces;
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
