@@ -12,7 +12,9 @@ Push-Location $root
 try {
     dotnet restore ".\Look.slnx"
     if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed." }
-    dotnet test ".\Look.slnx" --configuration Release
+    dotnet build ".\Look.slnx" --configuration Release --no-restore
+    if ($LASTEXITCODE -ne 0) { throw "Release build failed." }
+    dotnet test ".\Look.slnx" --configuration Release --no-build --no-restore
     if ($LASTEXITCODE -ne 0) { throw "Unit tests failed." }
     dotnet publish ".\src\Look.App\Look.App.csproj" --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=true --output $publish
     if ($LASTEXITCODE -ne 0) { throw "Windows publish failed." }
