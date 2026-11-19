@@ -15,4 +15,5 @@ public sealed class BrowserData
     public List<BrowserBookmark> Bookmarks { get; set; } = [];
     public List<BrowserHistoryEntry> History { get; set; } = [];
     public List<BrowserDownloadEntry> Downloads { get; set; } = [];
+    public BrowserSettings Settings { get; set; } = new();
 }
