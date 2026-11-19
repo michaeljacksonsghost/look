@@ -772,6 +772,28 @@ public partial class MainWindow : Window
             splitMenu.Items.Add(closeSplit);
         }
         menu.Items.Add(splitMenu);
+        var readerMode = new MenuItem
+        {
+            Header = "Reader mode",
+            IsCheckable = true,
+            IsChecked = _active is not null && _engines.TryGetValue(_active.Id, out var readerEngine) && readerEngine.IsReaderMode,
+            IsEnabled = _active is not null && _engines.ContainsKey(_active.Id)
+        };
+        readerMode.Click += async (_, _) =>
+        {
+            if (_active is null || !_engines.TryGetValue(_active.Id, out var engine)) return;
+            try
+            {
+                await engine.SetReaderModeAsync(readerMode.IsChecked);
+                StatusText.Text = readerMode.IsChecked ? "Reader mode" : "Normal page";
+            }
+            catch (Exception ex)
+            {
+                readerMode.IsChecked = engine.IsReaderMode;
+                MessageBox.Show(ex.Message, "Reader mode", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        };
+        menu.Items.Add(readerMode);
         var addBookmark = new MenuItem { Header = "Add / remove bookmark" };
         addBookmark.Click += Bookmark_Click;
         menu.Items.Add(addBookmark);
