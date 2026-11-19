@@ -95,6 +95,17 @@ public sealed class BrowserDataStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task CustomCssRulesPersistPerDomainAndCanBeCleared()
+    {
+        var store = new BrowserDataStore(FilePath);
+        await store.SaveSiteCssAsync("https://example.org/article", "body { font-size: 18px; }");
+
+        Assert.Equal("body { font-size: 18px; }", await new BrowserDataStore(FilePath).GetSiteCssAsync("example.org"));
+        await store.SaveSiteCssAsync("example.org", string.Empty);
+        Assert.Equal(string.Empty, await store.GetSiteCssAsync("example.org"));
+    }
+
+    [Fact]
     public async Task LibraryItemsCanBeDeletedIndividually()
     {
         var store = new BrowserDataStore(FilePath);
