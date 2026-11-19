@@ -153,6 +153,7 @@ public partial class MainWindow : Window
         }
 
         if (previous is not null) previous.IsActive = false;
+        BrowserHost.Children.Clear();
         if (previous is not null && previous.Id != tab.Id && previous.Id != _splitTab?.Id &&
             _engines.TryGetValue(previous.Id, out var previousEngine))
             _ = previousEngine.TrySuspendAsync();
@@ -247,6 +248,7 @@ public partial class MainWindow : Window
         var previousSplit = _splitTab;
         if (previousSplit is not null && previousSplit.Id != secondary.Id)
         {
+            BrowserHost.Children.Clear();
             previousSplit.IsSplit = false;
             if (_engines.TryGetValue(previousSplit.Id, out var previousEngine))
                 _ = previousEngine.TrySuspendAsync();
@@ -289,6 +291,7 @@ public partial class MainWindow : Window
         _splitTab.IsSplit = false;
         var secondary = _splitTab;
         _splitTab = null;
+        BrowserHost.Children.Clear();
         if (_engines.TryGetValue(secondary.Id, out var engine))
             _ = engine.TrySuspendAsync();
         RenderBrowserHost();
@@ -567,6 +570,8 @@ public partial class MainWindow : Window
         {
             _splitTab!.IsSplit = false;
             _splitTab = null;
+            BrowserHost.Children.Clear();
+            if (_engines.TryGetValue(tab.Id, out var splitEngine)) await splitEngine.TrySuspendAsync();
         }
         if (wasActive)
         {
@@ -644,6 +649,7 @@ public partial class MainWindow : Window
         {
             if (_splitTab is not null) _splitTab.IsSplit = false;
             _splitTab = null;
+            if (wasSplit) BrowserHost.Children.Clear();
         }
         if (!_isPrivate && Uri.TryCreate(tab.Address, UriKind.Absolute, out var closedUri) &&
             (closedUri.Scheme == Uri.UriSchemeHttp || closedUri.Scheme == Uri.UriSchemeHttps))
