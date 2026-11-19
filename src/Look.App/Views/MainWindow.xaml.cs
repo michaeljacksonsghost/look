@@ -11,15 +11,45 @@ public partial class MainWindow : Window
 {
     private readonly ObservableCollection<BrowserTab> _tabs = new();
     private readonly Dictionary<Guid, IBrowserEngine> _engines = new();
+    private readonly BrowserDataStore _dataStore = new();
     private readonly string _profileFolder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "look", "WebView2");
     private BrowserTab? _active;
+    private bool _restoring;
 
     public MainWindow()
     {
         InitializeComponent();
         TabsList.ItemsSource = _tabs;
-        AddTab();
+    }
+
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        _restoring = true;
+        try
+        {
+            var data = await _dataStore.LoadAsync();
+            foreach (var saved in data.SessionTabs)
+            {
+                _tabs.Add(new BrowserTab
+                {
+                    Address = saved.Address,
+                    Title = string.IsNullOrWhiteSpace(saved.Title) ? "New tab" : saved.Title,
+                    IsPinned = saved.IsPinned
+                });
+            }
+
+            if (_tabs.Count == 0) AddTab();
+            else SelectTab(_tabs[Math.Clamp(data.ActiveTabIndex, 0, _tabs.Count - 1)]);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Session could not be restored";
+            AddTab();
+            MessageBox.Show($"look could not restore the previous session.\n\n{ex.Message}",
+                "look", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally { _restoring = false; }
     }
 
     private void AddTab()
@@ -52,8 +82,7 @@ public partial class MainWindow : Window
 
     private async Task<IBrowserEngine> GetOrCreateEngineAsync(BrowserTab tab)
     {
-        if (_engines.TryGetValue(tab.Id, out var existing))
-            return existing;
+        if (_engines.TryGetValue(tab.Id, out var existing)) return existing;
 
         var engine = new WebView2BrowserEngine();
         _engines.Add(tab.Id, engine);
@@ -66,7 +95,13 @@ public partial class MainWindow : Window
         engine.LoadingChanged += (_, loading) =>
         {
             tab.IsLoading = loading;
-            if (_active?.Id == tab.Id) StatusText.Text = loading ? "Loading" : "Ready";
+            if (_active?.Id == tab.Id) StatusText.Text = loading ? "Loading…" : "Ready";
+        };
+        engine.NavigationFinished += async (_, success) =>
+        {
+            if (!success || string.IsNullOrWhiteSpace(tab.Address)) return;
+            try { await _dataStore.AddHistoryAsync(tab.Title, tab.Address); }
+            catch (IOException) { if (_active?.Id == tab.Id) StatusText.Text = "History could not be saved"; }
         };
 
         try
@@ -85,7 +120,6 @@ public partial class MainWindow : Window
     private async Task NavigateAsync(string input)
     {
         if (_active is null) return;
-
         try
         {
             var uri = AddressParser.Parse(input);
@@ -113,123 +147,151 @@ public partial class MainWindow : Window
 
     private void AddressBox_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter)
-        {
-            _ = NavigateAsync(AddressBox.Text);
-            e.Handled = true;
-        }
+        if (e.Key == Key.Enter) { _ = NavigateAsync(AddressBox.Text); e.Handled = true; }
     }
 
     private void WelcomeAddress_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter)
-        {
-            _ = NavigateAsync(WelcomeAddress.Text);
-            e.Handled = true;
-        }
+        if (e.Key == Key.Enter) { _ = NavigateAsync(WelcomeAddress.Text); e.Handled = true; }
     }
 
-    private void NewTab_Click(object sender, RoutedEventArgs e)
-    {
-        AddTab();
-        WelcomeAddress.Focus();
-    }
+    private void NewTab_Click(object sender, RoutedEventArgs e) { AddTab(); WelcomeAddress.Focus(); }
 
     private void SelectTab_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.Tag is BrowserTab tab)
-            SelectTab(tab);
+        if ((sender as FrameworkElement)?.Tag is BrowserTab tab) SelectTab(tab);
     }
 
     private async void CloseTab_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is not BrowserTab tab) return;
-
         var index = _tabs.IndexOf(tab);
-        if (_active?.Id == tab.Id)
-        {
-            BrowserHost.Children.Clear();
-            BrowserHost.Visibility = Visibility.Collapsed;
-        }
-
+        var wasActive = _active?.Id == tab.Id;
+        if (wasActive) { BrowserHost.Children.Clear(); BrowserHost.Visibility = Visibility.Collapsed; }
         _tabs.Remove(tab);
-        if (_engines.Remove(tab.Id, out var engine))
-            await engine.DisposeAsync();
-
-        if (_tabs.Count == 0)
-            AddTab();
-        else if (_active?.Id == tab.Id)
-            SelectTab(_tabs[Math.Clamp(index - 1, 0, _tabs.Count - 1)]);
+        if (_engines.Remove(tab.Id, out var engine)) await engine.DisposeAsync();
+        if (_tabs.Count == 0) AddTab();
+        else if (wasActive) SelectTab(_tabs[Math.Clamp(index - 1, 0, _tabs.Count - 1)]);
+        await SaveSessionAsync();
     }
 
-    private async void Back_Click(object sender, RoutedEventArgs e)
+    private async void Bookmark_Click(object sender, RoutedEventArgs e)
     {
-        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine))
-            await engine.GoBackAsync();
+        if (_active is null || string.IsNullOrWhiteSpace(_active.Address))
+        { StatusText.Text = "Open a page before bookmarking it"; return; }
+        var added = await _dataStore.ToggleBookmarkAsync(_active.Title, _active.Address);
+        StatusText.Text = added ? "Bookmark saved" : "Bookmark removed";
     }
 
-    private async void Forward_Click(object sender, RoutedEventArgs e)
-    {
-        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine))
-            await engine.GoForwardAsync();
-    }
-
-    private async void Reload_Click(object sender, RoutedEventArgs e)
-    {
-        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine))
-            await engine.ReloadAsync();
-    }
-
-    private void Menu_Click(object sender, RoutedEventArgs e)
+    private async void Menu_Click(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu();
+        var addBookmark = new MenuItem { Header = "Add / remove bookmark" };
+        addBookmark.Click += Bookmark_Click;
+        menu.Items.Add(addBookmark);
+        menu.Items.Add(new Separator());
+
+        var bookmarks = new MenuItem { Header = "Bookmarks" };
+        foreach (var bookmark in await _dataStore.GetBookmarksAsync())
+        {
+            var item = new MenuItem { Header = bookmark.Title, Tag = bookmark.Address, ToolTip = bookmark.Address };
+            item.Click += MenuNavigate_Click;
+            bookmarks.Items.Add(item);
+        }
+        if (bookmarks.Items.Count == 0) bookmarks.Items.Add(new MenuItem { Header = "No bookmarks yet", IsEnabled = false });
+        menu.Items.Add(bookmarks);
+
+        var history = new MenuItem { Header = "Recent history" };
+        foreach (var entry in await _dataStore.GetHistoryAsync(20))
+        {
+            var item = new MenuItem { Header = entry.Title, Tag = entry.Address, ToolTip = entry.Address };
+            item.Click += MenuNavigate_Click;
+            history.Items.Add(item);
+        }
+        if (history.Items.Count == 0) history.Items.Add(new MenuItem { Header = "No history yet", IsEnabled = false });
+        history.Items.Add(new Separator());
+        var clearHistory = new MenuItem { Header = "Clear browsing history…" };
+        clearHistory.Click += async (_, _) =>
+        {
+            if (MessageBox.Show("Clear the browsing history saved by look?", "Clear history",
+                    MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                await _dataStore.ClearHistoryAsync();
+                StatusText.Text = "Browsing history cleared";
+            }
+        };
+        history.Items.Add(clearHistory);
+        menu.Items.Add(history);
+
+        menu.Items.Add(new Separator());
         var quit = new MenuItem { Header = "Quit look" };
         quit.Click += (_, _) => Close();
         menu.Items.Add(quit);
         menu.IsOpen = true;
     }
 
+    private void MenuNavigate_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is string address) _ = NavigateAsync(address);
+    }
+
+    private async Task SaveSessionAsync()
+    {
+        if (_restoring) return;
+        var snapshots = _tabs.Select(tab => new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned)).ToList();
+        var activeIndex = _active is null ? 0 : Math.Max(0, _tabs.IndexOf(_active));
+        await _dataStore.SaveSessionAsync(snapshots, activeIndex);
+    }
+
+    private async void Back_Click(object sender, RoutedEventArgs e)
+    {
+        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine)) await engine.GoBackAsync();
+    }
+
+    private async void Forward_Click(object sender, RoutedEventArgs e)
+    {
+        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine)) await engine.GoForwardAsync();
+    }
+
+    private async void Reload_Click(object sender, RoutedEventArgs e)
+    {
+        if (_active is not null && _engines.TryGetValue(_active.Id, out var engine)) await engine.ReloadAsync();
+    }
+
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
-
         if (e.Key == Key.L)
         {
-            AddressBox.Focus();
-            AddressBox.SelectAll();
-            e.Handled = true;
+            AddressBox.Focus(); AddressBox.SelectAll(); e.Handled = true;
         }
         else if (e.Key == Key.T)
         {
-            AddTab();
-            WelcomeAddress.Focus();
-            e.Handled = true;
+            AddTab(); WelcomeAddress.Focus(); e.Handled = true;
         }
         else if (e.Key == Key.W)
         {
-            if (_active is not null)
-                CloseTab_Click(new Button { Tag = _active }, new RoutedEventArgs());
+            if (_active is not null) CloseTab_Click(new Button { Tag = _active }, new RoutedEventArgs());
             e.Handled = true;
         }
         else if (e.Key == Key.R)
         {
-            Reload_Click(this, new RoutedEventArgs());
-            e.Handled = true;
+            Reload_Click(this, new RoutedEventArgs()); e.Handled = true;
         }
         else if (e.Key == Key.Tab && _tabs.Count > 1)
         {
             var index = _active is null ? 0 : _tabs.IndexOf(_active);
             var backwards = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
-            var next = (index + (backwards ? -1 : 1) + _tabs.Count) % _tabs.Count;
-            SelectTab(_tabs[next]);
+            SelectTab(_tabs[(index + (backwards ? -1 : 1) + _tabs.Count) % _tabs.Count]);
             e.Handled = true;
         }
     }
 
     private async void Window_Closed(object? sender, EventArgs e)
     {
-        foreach (var engine in _engines.Values)
-            await engine.DisposeAsync();
+        try { await SaveSessionAsync(); }
+        catch (IOException) { /* A failed session write must not prevent shutdown. */ }
+        foreach (var engine in _engines.Values) await engine.DisposeAsync();
         _engines.Clear();
     }
 }
