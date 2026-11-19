@@ -16,8 +16,7 @@ public sealed class BrowserDataStore
     public BrowserDataStore(string? filePath = null)
     {
         _filePath = filePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "look", "browser-data.json");
+            Look.AppPaths.DataRoot, "browser-data.json");
     }
 
     public async Task<BrowserData> LoadAsync(CancellationToken cancellationToken = default)
