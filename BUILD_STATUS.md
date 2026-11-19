@@ -22,6 +22,7 @@ The current development branch contains:
 - User-configurable per-domain request blocking with an allowlist and per-profile settings.
 - Private windows with a separate temporary profile/data directory; the directory is deleted on normal close where Windows releases the files.
 - Explicit portable mode that stores profile and browser data beside the executable in a Data directory.
+- Portable launcher checks for WebView2 Runtime and runs the Microsoft bootstrapper if it is missing; installer includes the same bootstrapper.
 - Version metadata, changelog, release instructions, PowerShell packaging script, and Inno Setup installer definition.
 - Windows GitHub Actions workflow intended to build, test, package, and upload both x64 distributions.
 - Development privacy notice and pre-release threat model documenting local data locations, trust boundaries, and remaining security work.
@@ -52,5 +53,5 @@ This environment cannot run the Windows WPF application or .NET Windows runtime.
 - 3–4 pane layouts and a dedicated tab switcher are not implemented.
 - Domain blocking is a simple user-managed host block/allow list, not a maintained ad/tracker filter list; service-worker/shared-worker requests are outside the current document-source filter.
 - Credential vault and persistent permission review/revocation UI are not implemented; current site grants are one-time.
-- Installer and portable package definitions exist, but actual artifacts have not yet been built and verified.
+- Installer and portable package definitions exist; the latest Windows CI run is being used to validate build, tests, and artifact generation.
 - Code signing, updater, rollback, and release checksums remain outstanding.
