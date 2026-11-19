@@ -73,6 +73,7 @@ See [release instructions](docs/RELEASING.md).
 - [Privacy notice](docs/PRIVACY.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Extension test plan and MV3 fixture](docs/EXTENSION_TEST_PLAN.md)
+- [Keyboard shortcuts](docs/KEYBOARD_SHORTCUTS.md)
 - [Changelog](CHANGELOG.md)
 
 ## Provenance
