@@ -120,6 +120,7 @@ public partial class MainWindow : Window
             if (!string.IsNullOrWhiteSpace(tab.Address))
                 _ = NavigateAsync(tab.Address);
         }
+        _ = SaveSessionQuietlyAsync();
     }
 
     private async Task<IBrowserEngine> GetOrCreateEngineAsync(BrowserTab tab)
