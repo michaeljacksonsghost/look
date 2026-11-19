@@ -9,10 +9,10 @@ The current development branch contains:
 - Shared environment manager with reference counting for regular and isolated profiles.
 - Navigation, back/forward/reload/stop, and find-in-page.
 - Tab close, duplicate, pin, mute, drag reorder, keyboard shortcuts, and background tab suspend/resume.
-- Local JSON persistence for session tabs, recently closed tabs, bookmarks, history, and downloads.
+- Local JSON persistence for session tabs (autosaved on navigation/tab changes), recently closed tabs, bookmarks, history, and downloads.
 - Save-as download flow, executable-file warning, completion/interruption tracking, and recent downloads list.
 - Per-request site permission prompts that default to deny and are not persisted.
-- Basic unpacked-extension install/list/enable/disable/remove.
+- Basic unpacked-extension install/list/enable/disable/remove using the current WebView2 profile.
 - User-configurable per-domain request blocking with an allowlist and per-profile settings.
 - Private windows with a separate temporary profile/data directory; the directory is deleted on normal close where Windows releases the files.
 - Explicit portable mode that stores profile and browser data beside the executable in a Data directory.
@@ -38,7 +38,7 @@ This environment cannot run the Windows WPF application or .NET Windows runtime.
 
 - WebView2 extension support is partial: unpacked local folders only, with no browser toolbar action/popup host. Full Manifest V3 behavior, native messaging, and Chrome Web Store/CRX installation remain unverified or unsupported.
 - Private-window data is stored in a temporary directory, removed on normal close, and stale private folders are cleaned on next startup when no active window holds the exclusive lock; forensic privacy review remains outstanding.
-- No separate persistent user profiles beyond the default profile and private-window profiles.
+- No separate named persistent user profiles beyond the default profile and private-window profiles.
 - Tab suspension/resume and renderer crash recovery are not implemented.
 - History search and per-entry deletion are not implemented.
 - Reader mode, custom CSS/element hiding, split view, Spaces, and tab switcher are not implemented.
