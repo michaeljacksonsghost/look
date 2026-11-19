@@ -17,5 +17,27 @@ public static class AppPaths
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "look");
 
         Directory.CreateDirectory(DataRoot);
+        CleanupAbandonedPrivateData();
+    }
+
+    private static void CleanupAbandonedPrivateData()
+    {
+        var privateRoot = Path.Combine(Path.GetTempPath(), "look-private");
+        if (!Directory.Exists(privateRoot)) return;
+
+        foreach (var directory in Directory.EnumerateDirectories(privateRoot))
+        {
+            try
+            {
+                var lockPath = Path.Combine(directory, "private.lock");
+                if (File.Exists(lockPath))
+                {
+                    using var probe = new FileStream(lockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                }
+                Directory.Delete(directory, recursive: true);
+            }
+            catch (IOException) { /* An active private window holds the exclusive lock. */ }
+            catch (UnauthorizedAccessException) { /* Leave protected temporary data untouched. */ }
+        }
     }
 }
