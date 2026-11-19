@@ -349,6 +349,11 @@ public partial class MainWindow : Window
         };
         engine.ElementPicked += async (_, selector) =>
         {
+            if (string.IsNullOrWhiteSpace(selector))
+            {
+                if (_active?.Id == tab.Id) StatusText.Text = "Element picker cancelled";
+                return;
+            }
             if (!Uri.TryCreate(tab.Address, UriKind.Absolute, out var pageUri)) return;
             var host = pageUri.Host;
             var css = await _dataStore.GetSiteCssAsync(host);
