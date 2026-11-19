@@ -51,6 +51,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     public event EventHandler<bool>? LoadingChanged;
     public event EventHandler<bool>? NavigationFinished;
     public event EventHandler<BrowserDownloadRequest>? DownloadRequested;
+    public event EventHandler<BrowserPermissionRequest>? PermissionRequested;
 
     public async Task InitializeAsync(string userDataFolder, CancellationToken cancellationToken = default)
     {
@@ -94,6 +95,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         core.NavigationStarting += OnNavigationStarting;
         core.NavigationCompleted += OnNavigationCompleted;
         core.DownloadStarting += OnDownloadStarting;
+        core.PermissionRequested += OnPermissionRequested;
         _initialized = true;
     }
 
@@ -260,6 +262,18 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             AddressChanged?.Invoke(this, uri);
     }
 
+    private void OnPermissionRequested(object? sender, CoreWebView2PermissionRequestedEventArgs e)
+    {
+        e.Handled = true;
+        e.SavesInProfile = false;
+        e.State = CoreWebView2PermissionState.Deny;
+        if (PermissionRequested is null) return;
+        PermissionRequested.Invoke(this, new BrowserPermissionRequest(e.Uri, e.PermissionKind.ToString(), allow =>
+        {
+            e.State = allow ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
+        }));
+    }
+
     private void OnDownloadStarting(object? sender, CoreWebView2DownloadStartingEventArgs e)
     {
         var operation = e.DownloadOperation;
@@ -306,6 +320,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             core.NavigationStarting -= OnNavigationStarting;
             core.NavigationCompleted -= OnNavigationCompleted;
             core.DownloadStarting -= OnDownloadStarting;
+            core.PermissionRequested -= OnPermissionRequested;
             if (_resourceFilterAdded)
             {
                 core.WebResourceRequested -= OnWebResourceRequested;
@@ -320,6 +335,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         LoadingChanged = null;
         NavigationFinished = null;
         DownloadRequested = null;
+        PermissionRequested = null;
         ((IDisposable)_view).Dispose();
         if (_environmentKey is not null && _environmentEntry is not null)
             ReleaseEnvironment(_environmentKey, _environmentEntry);
