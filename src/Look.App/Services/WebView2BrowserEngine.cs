@@ -42,6 +42,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
     private string? _readerSourceUri;
     private string? _customCssScriptId;
     private string? _customCssDomain;
+    private bool _isPickingElement;
 
     public FrameworkElement View => _view;
     public bool IsMuted
@@ -236,7 +237,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         _view.CoreWebView2.NavigateToString(html.ToString());
     }
 
-    public Task StartElementPickerAsync()
+    public async Task StartElementPickerAsync()
     {
         EnsureInitialized();
         const string script = @"(() => {
@@ -300,22 +301,29 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             document.addEventListener('click', onClick, true);
             window.addEventListener('keydown', onKey, true);
         })();";
-        return _view.CoreWebView2.ExecuteScriptAsync(script);
+        _isPickingElement = true;
+        try { await _view.CoreWebView2.ExecuteScriptAsync(script); }
+        catch { _isPickingElement = false; throw; }
     }
 
     private void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
+        if (!_isPickingElement) return;
         try
         {
             using var message = JsonDocument.Parse(e.WebMessageAsJson);
             var root = message.RootElement;
             if (!root.TryGetProperty("type", out var type)) return;
             if (type.GetString() == "look-element-picker-cancelled")
+            {
+                _isPickingElement = false;
                 ElementPicked?.Invoke(this, string.Empty);
+            }
             else if (type.GetString() == "look-element-picked" && root.TryGetProperty("selector", out var selector))
             {
                 var value = selector.GetString();
-                if (!string.IsNullOrWhiteSpace(value)) ElementPicked?.Invoke(this, value);
+                _isPickingElement = false;
+                if (!string.IsNullOrWhiteSpace(value) && value.Length <= 512) ElementPicked?.Invoke(this, value);
             }
         }
         catch (JsonException) { /* Ignore messages that are not look picker payloads. */ }
@@ -483,8 +491,11 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         DownloadRequested.Invoke(this, request);
     }
 
-    private void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e) =>
+    private void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
+    {
+        _isPickingElement = false;
         LoadingChanged?.Invoke(this, true);
+    }
 
     private void OnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
@@ -528,6 +539,7 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
             _readerSourceUri = null;
             _customCssScriptId = null;
             _customCssDomain = null;
+            _isPickingElement = false;
             ((IDisposable)_view).Dispose();
             if (_environmentKey is not null && _environmentEntry is not null)
                 ReleaseEnvironment(_environmentKey, _environmentEntry);
