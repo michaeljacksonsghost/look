@@ -586,6 +586,10 @@ public partial class MainWindow : Window
         {
             AddressBox.Focus(); AddressBox.SelectAll(); e.Handled = true;
         }
+        else if (e.Key == Key.N && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+        {
+            new MainWindow(isPrivate: true).Show(); e.Handled = true;
+        }
         else if (e.Key == Key.T && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
         {
             _ = RestoreClosedTabAsync(); e.Handled = true;
@@ -602,6 +606,16 @@ public partial class MainWindow : Window
         else if (e.Key == Key.R)
         {
             Reload_Click(this, new RoutedEventArgs()); e.Handled = true;
+        }
+        else if (e.Key >= Key.D1 && e.Key <= Key.D8 && _tabs.Count > 0)
+        {
+            var targetIndex = (int)e.Key - (int)Key.D1;
+            if (targetIndex < _tabs.Count) SelectTab(_tabs[targetIndex]);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.D9 && _tabs.Count > 0)
+        {
+            SelectTab(_tabs[^1]); e.Handled = true;
         }
         else if (e.Key == Key.Tab && _tabs.Count > 1)
         {
