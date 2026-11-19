@@ -16,7 +16,7 @@ public partial class TabSwitcherWindow : Window
     public TabSwitcherWindow(IEnumerable<BrowserTab> tabs)
     {
         InitializeComponent();
-        _view = CollectionViewSource.GetDefaultView(tabs);
+        _view = new ListCollectionView(tabs.ToList());
         _view.Filter = FilterTab;
         TabsList.ItemsSource = _view;
         Loaded += (_, _) =>
