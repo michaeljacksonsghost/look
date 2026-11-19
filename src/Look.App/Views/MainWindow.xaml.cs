@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Data;
+using System.ComponentModel;
 using Microsoft.Win32;
 using System.Diagnostics;
 using Look.Models;
@@ -12,6 +14,9 @@ namespace Look.Views;
 public partial class MainWindow : Window
 {
     private readonly ObservableCollection<BrowserTab> _tabs = new();
+    private readonly ObservableCollection<BrowserSpace> _spaces = new();
+    private ICollectionView _tabView = null!;
+    private string _activeSpaceId = "default";
     private readonly Dictionary<Guid, IBrowserEngine> _engines = new();
     private readonly Dictionary<Guid, Task> _engineInitializations = new();
     private readonly Dictionary<Guid, int> _navigationVersions = new();
