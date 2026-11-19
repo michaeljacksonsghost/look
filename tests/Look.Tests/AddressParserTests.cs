@@ -35,10 +35,14 @@ public sealed class AddressParserTests
         Assert.Equal("www.google.com", result.Host);
     }
 
-    [Fact]
-    public void NonHttpSchemesAreNotNavigatedDirectly()
+    [Theory]
+    [InlineData("file:///C:/secret.txt")]
+    [InlineData("ftp://example.org/file.zip")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("chrome://settings")]
+    public void NonHttpSchemesAreNotNavigatedDirectly(string input)
     {
-        var result = AddressParser.Parse("file:///C:/secret.txt");
+        var result = AddressParser.Parse(input);
         Assert.Equal("www.google.com", result.Host);
         Assert.Contains("file", result.Query);
     }
