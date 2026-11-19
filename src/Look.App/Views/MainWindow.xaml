@@ -63,6 +63,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -71,14 +72,15 @@
             <Button Grid.Column="1" Content="›" Click="Forward_Click"
                     Style="{StaticResource QuietButton}" FontSize="21"/>
             <Button Grid.Column="2" Content="↻" Click="Reload_Click" Style="{StaticResource QuietButton}"/>
-            <Border Grid.Column="3" Background="{StaticResource PanelBrush}" CornerRadius="9"
+            <Button Grid.Column="3" Content="×" Click="Stop_Click" ToolTip="Stop loading" Style="{StaticResource QuietButton}"/>
+            <Border Grid.Column="4" Background="{StaticResource PanelBrush}" CornerRadius="9"
                     BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Margin="8,0">
                 <TextBox x:Name="AddressBox" Background="Transparent" Foreground="{StaticResource InkBrush}"
                          BorderThickness="0" VerticalContentAlignment="Center" Padding="12,0"
                          FontSize="13" KeyDown="AddressBox_KeyDown"/>
             </Border>
-            <Button Grid.Column="4" Content="☆" Click="Bookmark_Click" ToolTip="Add or remove bookmark" Style="{StaticResource QuietButton}" FontSize="17"/>
-            <Button Grid.Column="5" Content="···" Click="Menu_Click" Style="{StaticResource QuietButton}"/>
+            <Button Grid.Column="5" Content="☆" Click="Bookmark_Click" ToolTip="Add or remove bookmark" Style="{StaticResource QuietButton}" FontSize="17"/>
+            <Button Grid.Column="6" Content="···" Click="Menu_Click" Style="{StaticResource QuietButton}"/>
         </Grid>
 
         <Grid Grid.Row="2">
