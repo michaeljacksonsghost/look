@@ -266,6 +266,7 @@ public partial class MainWindow : Window
                     ? new Uri("https://www.google.com/")
                     : AddressParser.Parse(secondary.Address);
                 secondary.Address = address.AbsoluteUri;
+                await engine.SetCustomCssAsync(address.Host, await _dataStore.GetSiteCssAsync(address.Host));
                 await engine.NavigateAsync(address);
             }
 
@@ -432,6 +433,8 @@ public partial class MainWindow : Window
             var version = _navigationVersions.TryGetValue(tab.Id, out var currentVersion) ? currentVersion + 1 : 1;
             _navigationVersions[tab.Id] = version;
             var engine = await GetOrCreateEngineAsync(tab);
+            var siteCss = await _dataStore.GetSiteCssAsync(uri.Host);
+            await engine.SetCustomCssAsync(uri.Host, siteCss);
             if (!_navigationVersions.TryGetValue(tab.Id, out var latestVersion) || latestVersion != version)
                 return;
 
@@ -794,6 +797,29 @@ public partial class MainWindow : Window
             }
         };
         menu.Items.Add(readerMode);
+        var cssMenu = new MenuItem { Header = "Custom site CSS" };
+        var editCss = new MenuItem { Header = "Edit CSS for this website…" };
+        editCss.Click += async (_, _) =>
+        {
+            if (!TryGetActiveHost(out var host)) { StatusText.Text = "Open a website first"; return; }
+            var currentCss = await _dataStore.GetSiteCssAsync(host);
+            var updatedCss = PromptForCss(host, currentCss);
+            if (updatedCss is null) return;
+            await _dataStore.SaveSiteCssAsync(host, updatedCss);
+            await ApplySiteCssToEnginesAsync(host, updatedCss);
+            StatusText.Text = string.IsNullOrWhiteSpace(updatedCss) ? "Site CSS cleared" : $"Custom CSS saved for {host}";
+        };
+        cssMenu.Items.Add(editCss);
+        var clearCss = new MenuItem { Header = "Clear CSS for this website" };
+        clearCss.Click += async (_, _) =>
+        {
+            if (!TryGetActiveHost(out var host)) return;
+            await _dataStore.SaveSiteCssAsync(host, string.Empty);
+            await ApplySiteCssToEnginesAsync(host, string.Empty);
+            StatusText.Text = $"Custom CSS cleared for {host}";
+        };
+        cssMenu.Items.Add(clearCss);
+        menu.Items.Add(cssMenu);
         var addBookmark = new MenuItem { Header = "Add / remove bookmark" };
         addBookmark.Click += Bookmark_Click;
         menu.Items.Add(addBookmark);
@@ -1018,6 +1044,76 @@ public partial class MainWindow : Window
                Uri.TryCreate(_active.Address, UriKind.Absolute, out var uri) &&
                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
                (host = uri.Host).Length > 0;
+    }
+
+    private string? PromptForCss(string host, string currentCss)
+    {
+        var dialog = new Window
+        {
+            Title = $"Custom CSS — {host}",
+            Width = 680,
+            Height = 500,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+            Background = (System.Windows.Media.Brush)FindResource("PanelBrush"),
+            Foreground = (System.Windows.Media.Brush)FindResource("InkBrush")
+        };
+        var layout = new Grid { Margin = new Thickness(18) };
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var description = new TextBlock
+        {
+            Text = $"CSS is applied only to {host}, including on future page loads.",
+            Foreground = (System.Windows.Media.Brush)FindResource("MutedBrush"),
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+        var editor = new TextBox
+        {
+            Text = currentCss,
+            AcceptsReturn = true,
+            AcceptsTab = true,
+            TextWrapping = TextWrapping.NoWrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+            FontSize = 13,
+            Padding = new Thickness(12),
+            Background = (System.Windows.Media.Brush)FindResource("CanvasBrush"),
+            Foreground = (System.Windows.Media.Brush)FindResource("InkBrush"),
+            BorderBrush = (System.Windows.Media.Brush)FindResource("LineBrush")
+        };
+        Grid.SetRow(editor, 1);
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 14, 0, 0)
+        };
+        var cancel = new Button { Content = "Cancel", Style = (Style)FindResource("QuietButton"), Margin = new Thickness(0, 0, 8, 0) };
+        cancel.Click += (_, _) => dialog.DialogResult = false;
+        var save = new Button { Content = "Save CSS", Style = (Style)FindResource("QuietButton"), IsDefault = true };
+        save.Click += (_, _) => dialog.DialogResult = true;
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(save);
+        Grid.SetRow(buttons, 2);
+        layout.Children.Add(description);
+        layout.Children.Add(editor);
+        layout.Children.Add(buttons);
+        dialog.Content = layout;
+        dialog.Loaded += (_, _) => editor.Focus();
+        return dialog.ShowDialog() == true ? editor.Text : null;
+    }
+
+    private async Task ApplySiteCssToEnginesAsync(string host, string css)
+    {
+        foreach (var tab in _tabs)
+        {
+            if (!Uri.TryCreate(tab.Address, UriKind.Absolute, out var uri) ||
+                !string.Equals(uri.Host, host, StringComparison.OrdinalIgnoreCase) ||
+                !_engines.TryGetValue(tab.Id, out var engine)) continue;
+            await engine.SetCustomCssAsync(host, css);
+        }
     }
 
     private async Task ReloadActivePageAsync()
