@@ -96,6 +96,17 @@ public sealed class BrowserDataStore
         }, cancellationToken);
     }
 
+    public async Task RemoveBookmarkAsync(string address, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data => data.Bookmarks.RemoveAll(item =>
+            string.Equals(item.Address, address, StringComparison.OrdinalIgnoreCase)), cancellationToken);
+
+    public async Task RemoveHistoryAsync(string address, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data => data.History.RemoveAll(item =>
+            string.Equals(item.Address, address, StringComparison.OrdinalIgnoreCase)), cancellationToken);
+
+    public async Task RemoveDownloadAsync(Guid id, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data => data.Downloads.RemoveAll(item => item.Id == id), cancellationToken);
+
     public async Task<IReadOnlyList<BrowserBookmark>> GetBookmarksAsync(CancellationToken cancellationToken = default) =>
         (await LoadAsync(cancellationToken)).Bookmarks;
 
