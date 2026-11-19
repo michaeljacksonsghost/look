@@ -11,6 +11,8 @@ public interface IBrowserEngine : IAsyncDisposable
     Task GoBackAsync();
     Task GoForwardAsync();
     Task ReloadAsync(bool bypassCache = false);
+    Task StopAsync();
+    Task FindInPageAsync(string query, bool backwards = false);
     bool CanGoBack { get; }
     bool CanGoForward { get; }
     event EventHandler<string>? TitleChanged;
