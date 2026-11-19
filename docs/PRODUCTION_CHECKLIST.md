@@ -105,6 +105,7 @@ The following capabilities now have initial code paths, but remain unchecked abo
 - Executable-download warning flow.
 - Private-window temporary profiles with normal-close deletion and stale-folder cleanup on next startup.
 - Development privacy notice and pre-release threat model.
+- PowerShell release pipeline for self-contained win-x64 publish, portable ZIP with runtime bootstrapper, and Inno Setup installer.
 
 WebView2's documented extension UI limitations mean toolbar action/popup hosting and full extension compatibility are still open requirements.
 
