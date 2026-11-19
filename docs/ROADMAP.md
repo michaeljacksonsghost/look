@@ -6,7 +6,8 @@
 - [x] Document the open engine compatibility gate.
 - [x] Add production checklist and Windows CI workflow.
 - [x] Introduce engine abstraction and per-tab WebView2 controls.
-- [ ] Confirm successful Windows CI build and manual runtime verification.
+- [x] Confirm successful Windows CI Release build, 24 passing tests, portable ZIP, and installer compilation.
+- [ ] Complete manual Windows runtime verification.
 
 ## 1 — Engine proof of concept (release-critical)
 - [x] Move WebView2 behind the engine interface.
@@ -24,7 +25,7 @@
 - [x] Add searchable Library view and individual bookmark/history/download-record deletion (runtime verification pending).
 - [x] Add background tab suspend/resume (runtime verification pending).
 - [ ] Add renderer crash recovery.
-- [ ] Add complete keyboard shortcut map and tab switcher.
+- [x] Add core keyboard shortcuts and searchable tab switcher (Ctrl+Shift+A).
 - [ ] Add tests for tab lifecycle and session recovery.
 
 ## 3 — Search-inspired workspace
@@ -48,15 +49,17 @@
 - [x] Add per-request site permission prompts (default deny, allow once).
 - [ ] Add permission review/revocation UI for any future persisted grants.
 - [ ] Windows Credential Manager / DPAPI vault.
-- [ ] No automatic password filling.
-- [ ] Safe-download executable warning flow.
-- [ ] Threat model, dependency audit, and security tests.
+- [x] No password vault or automatic password filling is present in this build.
+- [x] Add executable-download warning flow (runtime verification pending).
+- [x] Write development privacy notice and pre-release threat model.
+- [ ] Complete dependency audit and security tests.
 
 ## 5 — Interface and distribution
 - [x] Add version metadata and changelog.
 - [x] Add repeatable x64 publish script, portable mode, and installer definition.
 - [x] Add Windows CI packaging workflow.
-- [ ] Verify portable ZIP and installer artifacts on clean Windows machines.
+- [x] Generate portable ZIP and installer artifacts in Windows CI.
+- [ ] Install, launch, upgrade, and uninstall on clean Windows machines.
 - [ ] Reference-faithful visual polish, accessibility, and responsive sizing.
 - [ ] Complete empty/error/offline states and remove placeholder controls.
 - [ ] Code signing, update/rollback strategy, and clean install/uninstall tests.
