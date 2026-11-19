@@ -87,7 +87,9 @@ public partial class MainWindow : Window
 
     private void SelectTab(BrowserTab tab)
     {
+        if (_active is not null) _active.IsActive = false;
         _active = tab;
+        tab.IsActive = true;
         AddressBox.Text = tab.Address;
         BrowserHost.Children.Clear();
 
