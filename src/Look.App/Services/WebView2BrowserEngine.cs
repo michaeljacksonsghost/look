@@ -13,10 +13,21 @@ namespace Look.Services;
 /// </summary>
 public sealed class WebView2BrowserEngine : IBrowserEngine
 {
-    private static readonly ConcurrentDictionary<string, Lazy<Task<CoreWebView2Environment>>> Environments =
+    private sealed class EnvironmentEntry(string userDataFolder)
+    {
+        public Lazy<Task<CoreWebView2Environment>> Environment { get; } = new(() =>
+            CoreWebView2Environment.CreateAsync(userDataFolder: userDataFolder,
+                options: new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true }));
+        public int ReferenceCount { get; set; }
+    }
+
+    private static readonly object EnvironmentSync = new();
+    private static readonly Dictionary<string, EnvironmentEntry> Environments =
         new(StringComparer.OrdinalIgnoreCase);
 
     private readonly WebView2 _view = new();
+    private string? _environmentKey;
+    private EnvironmentEntry? _environmentEntry;
     private bool _initialized;
 
     public FrameworkElement View => _view;
@@ -41,23 +52,30 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
 
         var fullPath = Path.GetFullPath(userDataFolder);
         Directory.CreateDirectory(fullPath);
-        var environmentTask = Environments.GetOrAdd(fullPath, path =>
-            new Lazy<Task<CoreWebView2Environment>>(() => CoreWebView2Environment.CreateAsync(
-                userDataFolder: path,
-                options: new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true }))).Value;
+        EnvironmentEntry entry;
+        lock (EnvironmentSync)
+        {
+            if (!Environments.TryGetValue(fullPath, out entry!))
+            {
+                entry = new EnvironmentEntry(fullPath);
+                Environments.Add(fullPath, entry);
+            }
+            entry.ReferenceCount++;
+        }
 
-        CoreWebView2Environment environment;
         try
         {
-            environment = await environmentTask.WaitAsync(cancellationToken);
+            var environment = await entry.Environment.Value.WaitAsync(cancellationToken);
+            await _view.EnsureCoreWebView2Async(environment);
+            _environmentKey = fullPath;
+            _environmentEntry = entry;
         }
         catch
         {
-            Environments.TryRemove(fullPath, out _);
+            ReleaseEnvironment(fullPath, entry);
             throw;
         }
 
-        await _view.EnsureCoreWebView2Async(environment);
         var core = _view.CoreWebView2;
         core.Settings.AreDefaultContextMenusEnabled = true;
         core.Settings.IsStatusBarEnabled = false;
@@ -148,6 +166,17 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         await extension.RemoveAsync();
     }
 
+    private static void ReleaseEnvironment(string key, EnvironmentEntry entry)
+    {
+        lock (EnvironmentSync)
+        {
+            entry.ReferenceCount--;
+            if (entry.ReferenceCount <= 0 && Environments.TryGetValue(key, out var current) &&
+                ReferenceEquals(current, entry))
+                Environments.Remove(key);
+        }
+    }
+
     private void EnsureInitialized()
     {
         if (!_initialized || _view.CoreWebView2 is null)
@@ -218,6 +247,10 @@ public sealed class WebView2BrowserEngine : IBrowserEngine
         NavigationFinished = null;
         DownloadRequested = null;
         ((IDisposable)_view).Dispose();
+        if (_environmentKey is not null && _environmentEntry is not null)
+            ReleaseEnvironment(_environmentKey, _environmentEntry);
+        _environmentKey = null;
+        _environmentEntry = null;
         return ValueTask.CompletedTask;
     }
 }
