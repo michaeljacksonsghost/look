@@ -33,7 +33,8 @@
 - [ ] Persistent user profiles with explicit cookie/storage isolation.
 - [x] Two-pane split view with resizing and pane switching (runtime verification pending).
 - [ ] Extend split layout to three and four panes.
-- [ ] Reader mode and clean reading typography.
+- [x] Add text-first reader mode and clean reading typography (runtime verification pending).
+- [ ] Preserve images, links, article structure, and scroll position in reader mode.
 - [x] Add user-managed per-domain blocking and allowlist exceptions (runtime verification pending).
 - [ ] Add maintained ad/tracker filter lists and per-site controls.
 - [ ] Document-start element hiding and custom CSS.
