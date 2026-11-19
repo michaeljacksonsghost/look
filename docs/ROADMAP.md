@@ -29,7 +29,7 @@
 
 ## 3 — Search-inspired workspace
 - [x] Add separate temporary profile/data location for private windows (runtime/privacy verification pending).
-- [ ] Spaces for tab and pin organization.
+- [x] Add named Spaces for tab organization and moving tabs between Spaces (runtime verification pending).
 - [ ] Persistent user profiles with explicit cookie/storage isolation.
 - [ ] Two-to-four-pane split view with resizing and focus switching.
 - [ ] Reader mode and clean reading typography.
