@@ -50,7 +50,7 @@
             <DockPanel Margin="12,0">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left"
                             VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="look" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="WORKSPACE" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}"/>
                     <TextBlock x:Name="ModeText" Text=" / quietly yours" Foreground="{StaticResource MutedBrush}"
                                Margin="8,0" VerticalAlignment="Center"/>
                     <ComboBox x:Name="SpaceSelector" Width="126" Margin="12,0,4,0" Padding="7,3"
