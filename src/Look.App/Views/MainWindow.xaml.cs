@@ -223,7 +223,11 @@ public partial class MainWindow : Window
                 return;
 
             await engine.NavigateAsync(uri);
-            if (_active?.Id != tab.Id) return;
+            if (_active?.Id != tab.Id)
+            {
+                await engine.TrySuspendAsync();
+                return;
+            }
 
             BrowserHost.Children.Clear();
             BrowserHost.Children.Add(engine.View);
