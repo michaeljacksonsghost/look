@@ -546,6 +546,25 @@ public partial class MainWindow : Window
             downloadsMenu.Items.Add(new MenuItem { Header = "No downloads yet", IsEnabled = false });
         menu.Items.Add(downloadsMenu);
 
+        var recentlyClosedMenu = new MenuItem { Header = "Recently closed tabs" };
+        if (!_isPrivate)
+        {
+            foreach (var closedTab in await _dataStore.GetRecentlyClosedAsync())
+            {
+                var closedItem = new MenuItem
+                {
+                    Header = string.IsNullOrWhiteSpace(closedTab.Title) ? closedTab.Address : closedTab.Title,
+                    Tag = closedTab.Address,
+                    ToolTip = closedTab.Address
+                };
+                closedItem.Click += async (_, _) => await RestoreClosedTabAsync(closedTab.Address);
+                recentlyClosedMenu.Items.Add(closedItem);
+            }
+        }
+        if (recentlyClosedMenu.Items.Count == 0)
+            recentlyClosedMenu.Items.Add(new MenuItem { Header = "No recently closed tabs", IsEnabled = false });
+        menu.Items.Add(recentlyClosedMenu);
+
         var history = new MenuItem { Header = "Recent history" };
         foreach (var entry in await _dataStore.GetHistoryAsync(20))
         {
@@ -643,7 +662,7 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is string address) _ = NavigateAsync(address);
     }
 
-    private async Task RestoreClosedTabAsync()
+    private async Task RestoreClosedTabAsync(string? targetAddress = null)
     {
         if (_isPrivate) { StatusText.Text = "Recently closed tabs are unavailable in private windows"; return; }
         var recentlyClosed = await _dataStore.GetRecentlyClosedAsync();
@@ -653,7 +672,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        var saved = recentlyClosed[0];
+        var saved = targetAddress is null
+            ? recentlyClosed[0]
+            : recentlyClosed.FirstOrDefault(item => item.Address == targetAddress);
+        if (saved is null) return;
         await _dataStore.RemoveRecentlyClosedAsync(saved.Address);
         var tab = new BrowserTab { Address = saved.Address, Title = saved.Title, IsPinned = saved.IsPinned };
         _tabs.Add(tab);
