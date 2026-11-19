@@ -12,7 +12,16 @@ public sealed class BrowserDownloadRequest : EventArgs
         _complete = complete;
     }
 
+    public event EventHandler<bool>? Finished;
+    public string? DestinationPath { get; private set; }
+
     public string SourceUri { get; }
     public string SuggestedFileName { get; }
-    public void Complete(string? destinationPath) => _complete(destinationPath);
+    public void Complete(string? destinationPath)
+    {
+        DestinationPath = destinationPath;
+        _complete(destinationPath);
+    }
+
+    public void ReportFinished(bool success) => Finished?.Invoke(this, success);
 }
