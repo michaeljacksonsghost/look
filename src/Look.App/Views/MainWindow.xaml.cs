@@ -17,6 +17,8 @@ public partial class MainWindow : Window
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "look", "WebView2");
     private BrowserTab? _active;
     private bool _restoring;
+    private Point _tabDragStart;
+    private BrowserTab? _tabDragCandidate;
 
     public MainWindow()
     {
@@ -158,6 +160,42 @@ public partial class MainWindow : Window
     }
 
     private void NewTab_Click(object sender, RoutedEventArgs e) { AddTab(); WelcomeAddress.Focus(); }
+
+    private void Tab_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.Tag is not BrowserTab tab) return;
+        _tabDragCandidate = tab;
+        _tabDragStart = e.GetPosition(null);
+    }
+
+    private void Tab_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _tabDragCandidate is null) return;
+        var current = e.GetPosition(null);
+        if (Math.Abs(current.X - _tabDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(current.Y - _tabDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+
+        var candidate = _tabDragCandidate;
+        _tabDragCandidate = null;
+        DragDrop.DoDragDrop((DependencyObject)sender, candidate, DragDropEffects.Move);
+    }
+
+    private void Tab_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(typeof(BrowserTab)) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void Tab_Drop(object sender, DragEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not BrowserTab target ||
+            e.Data.GetData(typeof(BrowserTab)) is not BrowserTab dragged) return;
+        var oldIndex = _tabs.IndexOf(dragged);
+        var newIndex = _tabs.IndexOf(target);
+        if (oldIndex < 0 || newIndex < 0 || oldIndex == newIndex) return;
+        _tabs.Move(oldIndex, newIndex);
+        await SaveSessionAsync();
+    }
 
     private void SelectTab_Click(object sender, RoutedEventArgs e)
     {
