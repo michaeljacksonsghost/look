@@ -82,7 +82,7 @@ public partial class BrowserLibraryWindow : Window
             if (item.FilePath is not null && File.Exists(item.FilePath))
             {
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(item.FilePath) { UseShellExecute = true }); }
-                catch (Exception ex) { MessageBox.Show($"The file could not be opened.\\n\\n{ex.Message}", "Downloads", MessageBoxButton.OK, MessageBoxImage.Warning); }
+                catch (Exception ex) { MessageBox.Show($"The file could not be opened.\n\n{ex.Message}", "Downloads", MessageBoxButton.OK, MessageBoxImage.Warning); }
             }
             else
                 MessageBox.Show("The downloaded file is no longer available.", "Downloads",
