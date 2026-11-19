@@ -59,7 +59,10 @@
                                         </Style>
                                     </Border.Style>
                                     <Border.ContextMenu>
-                                        <ContextMenu>
+                                        <ContextMenu Opened="TabContextMenu_Opened">
+                                            <MenuItem Header="Move to space">
+                                                <MenuItem Header="Choose a space" IsEnabled="False"/>
+                                            </MenuItem>
                                             <MenuItem Header="Pin / unpin tab" Click="PinTab_Click"/>
                                             <MenuItem Header="Duplicate tab" Click="DuplicateTab_Click"/>
                                             <MenuItem Header="Mute / unmute tab" Click="MuteTab_Click"/>
