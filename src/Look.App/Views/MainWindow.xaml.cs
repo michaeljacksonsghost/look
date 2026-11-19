@@ -859,7 +859,7 @@ public partial class MainWindow : Window
         menu.Items.Add(library);
         menu.Items.Add(new Separator());
         var privateWindow = new MenuItem { Header = "New private window" };
-        privateWindow.Click += (_, _) => new MainWindow(isPrivate: true, engineFactory: _engineFactory).Show();
+        privateWindow.Click += (_, _) => new MainWindow(isPrivate: true, engineFactory: _engineFactory, profile: _profile).Show();
         menu.Items.Add(privateWindow);
         var splitMenu = new MenuItem { Header = _splitTab is null ? "Open split view" : "Change split pane" };
         foreach (var candidate in _tabs.Where(tab => tab.SpaceId == _activeSpaceId && tab.Id != _active?.Id))
