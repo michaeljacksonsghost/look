@@ -13,6 +13,7 @@ public interface IBrowserEngine : IAsyncDisposable
     Task ReloadAsync(bool bypassCache = false);
     Task StopAsync();
     Task FindInPageAsync(string query, bool backwards = false);
+    bool IsMuted { get; set; }
     bool CanGoBack { get; }
     bool CanGoForward { get; }
     event EventHandler<string>? TitleChanged;
