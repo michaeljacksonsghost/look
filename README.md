@@ -23,7 +23,7 @@ dotnet run --project .\src\Look.App\Look.App.csproj
 - Named persistent browser profiles with isolated cookies, storage, bookmarks, history, settings, and extensions.
 - Resizable two-pane split browsing with pane switching.
 - Text-first reader mode with clean typography.
-- Per-domain custom CSS with document-start injection.
+- Per-domain custom CSS with document-start injection and click-to-hide element selection.
 - Find-in-page.
 - Local session restore, recently closed tabs, bookmarks, history, and downloads.
 - Searchable Library window with individual item deletion.
