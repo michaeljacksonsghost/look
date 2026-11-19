@@ -32,7 +32,7 @@ public static class AppPaths
                 var lockPath = Path.Combine(directory, "private.lock");
                 if (File.Exists(lockPath))
                 {
-                    using var probe = new FileStream(lockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    using (var probe = new FileStream(lockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
                 }
                 Directory.Delete(directory, recursive: true);
             }
