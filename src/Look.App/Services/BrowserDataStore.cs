@@ -139,6 +139,66 @@ public sealed class BrowserDataStore
         CancellationToken cancellationToken = default) =>
         (await LoadAsync(cancellationToken)).Downloads.Take(Math.Clamp(limit, 1, 200)).ToList();
 
+    public async Task<BrowserSettings> GetSettingsAsync(CancellationToken cancellationToken = default)
+    {
+        var settings = (await LoadAsync(cancellationToken)).Settings;
+        return new BrowserSettings
+        {
+            ContentBlockingEnabled = settings.ContentBlockingEnabled,
+            BlockedDomains = settings.BlockedDomains.ToList(),
+            AllowedDomains = settings.AllowedDomains.ToList()
+        };
+    }
+
+    public async Task SaveSettingsAsync(BrowserSettings settings, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data => data.Settings = new BrowserSettings
+        {
+            ContentBlockingEnabled = settings.ContentBlockingEnabled,
+            BlockedDomains = settings.BlockedDomains.Select(NormalizeDomain).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+            AllowedDomains = settings.AllowedDomains.Select(NormalizeDomain).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+        }, cancellationToken);
+
+    public async Task AddBlockedDomainAsync(string domain, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data =>
+        {
+            var normalized = NormalizeDomain(domain);
+            data.Settings.BlockedDomains = data.Settings.BlockedDomains
+                .Append(normalized).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }, cancellationToken);
+
+    public async Task RemoveBlockedDomainAsync(string domain, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data =>
+        {
+            var normalized = NormalizeDomain(domain);
+            data.Settings.BlockedDomains.RemoveAll(item => string.Equals(item, normalized, StringComparison.OrdinalIgnoreCase));
+        }, cancellationToken);
+
+    public async Task AddAllowedDomainAsync(string domain, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data =>
+        {
+            var normalized = NormalizeDomain(domain);
+            data.Settings.AllowedDomains = data.Settings.AllowedDomains
+                .Append(normalized).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }, cancellationToken);
+
+    public async Task RemoveAllowedDomainAsync(string domain, CancellationToken cancellationToken = default) =>
+        await MutateAsync(data =>
+        {
+            var normalized = NormalizeDomain(domain);
+            data.Settings.AllowedDomains.RemoveAll(item => string.Equals(item, normalized, StringComparison.OrdinalIgnoreCase));
+        }, cancellationToken);
+
+    private static string NormalizeDomain(string value)
+    {
+        var input = value.Trim();
+        if (!input.Contains("://", StringComparison.Ordinal)) input = "https://" + input;
+        if (!Uri.TryCreate(input, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
+            Uri.CheckHostName(uri.Host) == UriHostNameType.Unknown)
+            throw new ArgumentException("Enter a valid website domain.", nameof(value));
+        return uri.Host.TrimEnd('.').ToLowerInvariant();
+    }
+
     public async Task ClearHistoryAsync(CancellationToken cancellationToken = default) =>
         await MutateAsync(data => data.History.Clear(), cancellationToken);
 
@@ -178,6 +238,12 @@ public sealed class BrowserDataStore
         ActiveTabIndex = data.ActiveTabIndex,
         Bookmarks = data.Bookmarks.ToList(),
         History = data.History.ToList(),
-        Downloads = data.Downloads.ToList()
+        Downloads = data.Downloads.ToList(),
+        Settings = new BrowserSettings
+        {
+            ContentBlockingEnabled = data.Settings.ContentBlockingEnabled,
+            BlockedDomains = data.Settings.BlockedDomains.ToList(),
+            AllowedDomains = data.Settings.AllowedDomains.ToList()
+        }
     };
 }
