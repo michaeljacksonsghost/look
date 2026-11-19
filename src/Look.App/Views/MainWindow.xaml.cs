@@ -91,14 +91,20 @@ public partial class MainWindow : Window
 
     private void SelectTab(BrowserTab tab)
     {
-        if (_active is not null) _active.IsActive = false;
+        var previous = _active;
+        if (previous is not null) previous.IsActive = false;
+        BrowserHost.Children.Clear();
+        if (previous is not null && previous.Id != tab.Id &&
+            _engines.TryGetValue(previous.Id, out var previousEngine))
+            _ = previousEngine.TrySuspendAsync();
+
         _active = tab;
         tab.IsActive = true;
         AddressBox.Text = tab.Address;
-        BrowserHost.Children.Clear();
 
         if (_engines.TryGetValue(tab.Id, out var engine))
         {
+            _ = engine.ResumeAsync();
             WelcomePanel.Visibility = Visibility.Collapsed;
             BrowserHost.Visibility = Visibility.Visible;
             BrowserHost.Children.Add(engine.View);
