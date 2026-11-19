@@ -19,7 +19,7 @@
 ## 2 — Browser fundamentals
 - [x] Implement per-tab WebView2 instances and independent navigation state (runtime verification pending).
 - [x] Add stop, find-in-page, pin, duplicate, mute, close, and drag reorder actions.
-- [x] Add local session restore, recently closed tabs, bookmarks, and history.
+- [x] Add local session restore/autosave, recently closed tabs, bookmarks, and history.
 - [x] Add save-as downloads and a recent downloads list.
 - [ ] Add history search and per-entry deletion.
 - [x] Add background tab suspend/resume (runtime verification pending).
