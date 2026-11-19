@@ -13,17 +13,39 @@ public partial class MainWindow : Window
 {
     private readonly ObservableCollection<BrowserTab> _tabs = new();
     private readonly Dictionary<Guid, IBrowserEngine> _engines = new();
-    private readonly BrowserDataStore _dataStore = new();
-    private readonly string _profileFolder = Path.Combine(
-        Look.AppPaths.DataRoot, "WebView2");
+    private readonly BrowserDataStore _dataStore;
+    private readonly string _profileFolder;
+    private readonly bool _isPrivate;
+    private readonly string? _privateDataRoot;
     private BrowserTab? _active;
     private bool _restoring;
     private Point _tabDragStart;
     private BrowserTab? _tabDragCandidate;
 
-    public MainWindow()
+    public MainWindow(bool isPrivate = false)
     {
+        _isPrivate = isPrivate;
+        if (_isPrivate)
+        {
+            _privateDataRoot = Path.Combine(Path.GetTempPath(), "look-private", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_privateDataRoot);
+            _dataStore = new BrowserDataStore(Path.Combine(_privateDataRoot, "browser-data.json"));
+            _profileFolder = Path.Combine(_privateDataRoot, "WebView2");
+        }
+        else
+        {
+            _privateDataRoot = null;
+            _dataStore = new BrowserDataStore();
+            _profileFolder = Path.Combine(Look.AppPaths.DataRoot, "WebView2");
+        }
+
         InitializeComponent();
+        if (_isPrivate)
+        {
+            Title = "look — Private";
+            ModeText.Text = " / private window";
+            FooterLabel.Text = "LOOK · PRIVATE SESSION";
+        }
         TabsList.ItemsSource = _tabs;
     }
 
@@ -122,7 +144,7 @@ public partial class MainWindow : Window
             {
                 try
                 {
-                    await _dataStore.AddDownloadAsync(new BrowserDownloadEntry(
+                    if (!_isPrivate) await _dataStore.AddDownloadAsync(new BrowserDownloadEntry(
                         Guid.NewGuid(), request.SuggestedFileName, request.SourceUri,
                         dialog.FileName, success, DateTimeOffset.UtcNow));
                     if (_active?.Id == tab.Id)
@@ -132,7 +154,7 @@ public partial class MainWindow : Window
             };
             request.Complete(dialog.FileName);
         };
-        engine.NavigationFinished += async (_, success) =>
+        if (!_isPrivate) engine.NavigationFinished += async (_, success) =>
         {
             if (!success || string.IsNullOrWhiteSpace(tab.Address)) return;
             try { await _dataStore.AddHistoryAsync(tab.Title, tab.Address); }
@@ -239,7 +261,7 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is not BrowserTab tab) return;
         var index = _tabs.IndexOf(tab);
         var wasActive = _active?.Id == tab.Id;
-        if (Uri.TryCreate(tab.Address, UriKind.Absolute, out var closedUri) &&
+        if (!_isPrivate && Uri.TryCreate(tab.Address, UriKind.Absolute, out var closedUri) &&
             (closedUri.Scheme == Uri.UriSchemeHttp || closedUri.Scheme == Uri.UriSchemeHttps))
             await _dataStore.AddRecentlyClosedAsync(new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned));
         if (wasActive) { BrowserHost.Children.Clear(); BrowserHost.Visibility = Visibility.Collapsed; }
@@ -301,6 +323,7 @@ public partial class MainWindow : Window
 
     private async void Bookmark_Click(object sender, RoutedEventArgs e)
     {
+        if (_isPrivate) { StatusText.Text = "Bookmarks are not saved in private windows"; return; }
         if (_active is null || string.IsNullOrWhiteSpace(_active.Address))
         { StatusText.Text = "Open a page before bookmarking it"; return; }
         var added = await _dataStore.ToggleBookmarkAsync(_active.Title, _active.Address);
@@ -310,6 +333,9 @@ public partial class MainWindow : Window
     private async void Menu_Click(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu();
+        var privateWindow = new MenuItem { Header = "New private window" };
+        privateWindow.Click += (_, _) => new MainWindow(isPrivate: true).Show();
+        menu.Items.Add(privateWindow);
         var addBookmark = new MenuItem { Header = "Add / remove bookmark" };
         addBookmark.Click += Bookmark_Click;
         menu.Items.Add(addBookmark);
@@ -479,6 +505,7 @@ public partial class MainWindow : Window
 
     private async Task RestoreClosedTabAsync()
     {
+        if (_isPrivate) { StatusText.Text = "Recently closed tabs are unavailable in private windows"; return; }
         var recentlyClosed = await _dataStore.GetRecentlyClosedAsync();
         if (recentlyClosed.Count == 0)
         {
@@ -496,7 +523,7 @@ public partial class MainWindow : Window
 
     private async Task SaveSessionAsync()
     {
-        if (_restoring) return;
+        if (_restoring || _isPrivate) return;
         var snapshots = _tabs.Select(tab => new BrowserSessionTab(tab.Address, tab.Title, tab.IsPinned)).ToList();
         var activeIndex = _active is null ? 0 : Math.Max(0, _tabs.IndexOf(_active));
         await _dataStore.SaveSessionAsync(snapshots, activeIndex);
@@ -587,7 +614,14 @@ public partial class MainWindow : Window
     {
         try { await SaveSessionAsync(); }
         catch (IOException) { /* A failed session write must not prevent shutdown. */ }
+        BrowserHost.Children.Clear();
         foreach (var engine in _engines.Values) await engine.DisposeAsync();
         _engines.Clear();
+        if (_privateDataRoot is not null && Directory.Exists(_privateDataRoot))
+        {
+            try { Directory.Delete(_privateDataRoot, recursive: true); }
+            catch (IOException) { /* Temporary private data is cleaned up on normal close where Windows permits it. */ }
+            catch (UnauthorizedAccessException) { /* Do not block shutdown if the OS still holds a profile file. */ }
+        }
     }
 }
