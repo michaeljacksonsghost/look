@@ -77,3 +77,19 @@ These code paths are not yet verified by a Windows runtime test.
 ## Architecture rule
 
 UI and browser state must not depend directly on WebView2 or CEF types. Engine-specific code belongs behind `IBrowserEngine` and `IBrowserEngineFactory`. If a different engine is selected, replace the adapter rather than rewriting the tab/workspace model.
+
+
+## Additional candidate: DotNetBrowser
+
+A stronger commercial alternative is [DotNetBrowser](https://teamdev.com/dotnetbrowser/), a Chromium component designed for .NET/WPF applications. TeamDev advertises Chrome Web Store installation and programmatic CRX loading, plus Chromium profiles. It is therefore a closer feature match to the extension requirement than WebView2 or the CefSharp subset.
+
+The trade-off is cost and vendor dependency:
+- The current published individual license is approximately **US$1,429**, with a 30-day evaluation period.
+- A commercial license is required for continued use and distribution.
+- The engine would still need a proof-of-concept for the exact extensions look intends to support, especially MV3 service workers, popup UI, permissions, and update behavior.
+
+References:
+- [DotNetBrowser features and Chrome extension support](https://teamdev.com/dotnetbrowser/)
+- [DotNetBrowser licensing](https://teamdev.com/dotnetbrowser/docs/guides/licensing/)
+
+**Decision:** do not add this commercial dependency or incur a license cost without explicit approval. If full Chrome extension compatibility is a hard requirement, the next evidence-based step is a time-limited DotNetBrowser trial and the same extension test matrix—not a blind switch to CEF.
