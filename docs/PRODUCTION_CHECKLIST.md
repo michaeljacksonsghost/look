@@ -85,4 +85,15 @@ This is the release acceptance checklist for the Windows browser. A feature is n
 - **Beta:** extension matrix decision, session/history/downloads, privacy controls, automated tests.
 - **1.0:** security review, polished UX, installer + portable package, verified upgrade/uninstall, and no known data-loss defects.
 
+## Implemented in source, awaiting Windows verification
+
+The following capabilities now have initial code paths, but remain unchecked above until Windows CI and manual runtime testing confirm them:
+- Session persistence and restoration.
+- Recently closed tab restoration (Ctrl+Shift+T).
+- Local bookmarks and browsing history, including clear-history action.
+- Find-in-page (Ctrl+F), stop navigation, and tab context actions for pin, duplicate, mute, and close.
+- WebView2 unpacked-extension install/list/enable/disable/remove.
+
+WebView2's documented extension UI limitations mean toolbar action/popup hosting and full extension compatibility are still open requirements.
+
 A checked item means verified, not merely coded. Items that depend on engine selection remain open until the compatibility gate is resolved.
