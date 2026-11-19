@@ -140,6 +140,16 @@ public partial class MainWindow : Window
             tab.IsLoading = loading;
             if (_active?.Id == tab.Id) StatusText.Text = loading ? "Loading…" : "Ready";
         };
+        engine.PermissionRequested += (_, request) =>
+        {
+            var decision = MessageBox.Show(
+                $"{request.Origin} wants permission to use {request.PermissionKind}.\\n\\nAllow this request once?",
+                "Site permission", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var allowed = decision == MessageBoxResult.Yes;
+            request.Respond(allowed);
+            if (_active?.Id == tab.Id)
+                StatusText.Text = allowed ? $"Allowed {request.PermissionKind} once" : $"Denied {request.PermissionKind}";
+        };
         engine.DownloadRequested += (_, request) =>
         {
             var downloadsFolder = Path.Combine(
